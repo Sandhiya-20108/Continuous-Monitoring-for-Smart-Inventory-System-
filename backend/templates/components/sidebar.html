@@ -1,0 +1,59 @@
+<!-- Collapsible Sidebar Navigation -->
+<aside class="sidebar" id="sidebar">
+    <div>
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="fa-solid fa-shield-halved logo-icon"></i>
+                <span class="sidebar-title">Smart Inventory</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('web.dashboard') }}" class="nav-item {% if current_view == 'dashboard' %}active{% endif %}" data-tooltip="Dashboard">
+                <i class="fa-solid fa-house"></i>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            <a href="{{ url_for('web.inventory') }}" class="nav-item {% if current_view == 'inventory' %}active{% endif %}" data-tooltip="Inventory">
+                <i class="fa-solid fa-boxes-stacked"></i>
+                <span class="nav-text">Inventory</span>
+            </a>
+            <a href="{{ url_for('web.risk_monitor') }}" class="nav-item {% if current_view == 'risk_monitor' %}active{% endif %}" data-tooltip="Risk Monitor">
+                <i class="fa-solid fa-gauge-high"></i>
+                <span class="nav-text">Risk Monitor</span>
+            </a>
+            <a href="{{ url_for('web.alerts') }}" class="nav-item {% if current_view == 'alerts' %}active{% endif %}" data-tooltip="Alerts">
+                <i class="fa-solid fa-bell"></i>
+                <span class="nav-text">Alerts Center</span>
+            </a>
+            <a href="{{ url_for('web.analytics') }}" class="nav-item {% if current_view == 'analytics' %}active{% endif %}" data-tooltip="Analytics">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span class="nav-text">Analytics</span>
+            </a>
+            {% if session.get('user') and session['user'].get('role') == 'admin' %}
+            <a href="{{ url_for('web.users') }}" class="nav-item {% if current_view == 'users' %}active{% endif %}" data-tooltip="Users">
+                <i class="fa-solid fa-users-gear"></i>
+                <span class="nav-text">Staff Users</span>
+            </a>
+            {% endif %}
+        </nav>
+    </div>
+
+    <div class="sidebar-footer">
+        <div class="user-profile-card">
+            <div style="display: flex; align-items: center; gap: 0.6rem; overflow: hidden;">
+                <div class="user-avatar">{{ session.get('user', {}).get('full_name', 'U')[0] | upper }}</div>
+                <div class="user-details">
+                    <span class="user-name-text">{{ session.get('user', {}).get('full_name', session.get('user', {}).get('username', 'User')) }}</span>
+                    <span class="user-role-badge {{ session.get('user', {}).get('role', 'staff') }}">
+                        {{ session.get('user', {}).get('role', 'staff') | upper }}
+                    </span>
+                </div>
+            </div>
+            <form action="{{ url_for('web.logout') }}" method="POST" style="margin: 0;">
+                <button type="submit" class="btn-sidebar-logout" title="Log Out">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+</aside>

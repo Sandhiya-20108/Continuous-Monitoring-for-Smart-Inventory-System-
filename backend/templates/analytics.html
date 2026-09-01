@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Telemetry Analytics | Continuous Monitoring for Smart Inventory System{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3><i class="fa-solid fa-chart-line" style="color: var(--primary-accent);"></i> Advanced Telemetry & Analytics</h3>
+    <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.5rem;">Continuous multi-dimensional analysis of consumption rates, stockout proximity, and expiry metrics.</p>
+
+    <div class="dashboard-split-grid">
+        <div style="background: var(--bg-surface-hover); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            <h4 style="font-size: 0.95rem; color: var(--primary-cyan); margin-bottom: 1rem;"><i class="fa-solid fa-heart-pulse"></i> 5-Week System Stability Trend</h4>
+            
+            <div class="css-bar-chart">
+                <div class="css-bar-row">
+                    <div class="css-bar-header"><span>Week 1</span><span>74%</span></div>
+                    <div class="css-bar-track"><div class="css-bar-fill" style="--width: 74%;"></div></div>
+                </div>
+                <div class="css-bar-row">
+                    <div class="css-bar-header"><span>Week 2</span><span>76%</span></div>
+                    <div class="css-bar-track"><div class="css-bar-fill" style="--width: 76%;"></div></div>
+                </div>
+                <div class="css-bar-row">
+                    <div class="css-bar-header"><span>Week 3</span><span>79%</span></div>
+                    <div class="css-bar-track"><div class="css-bar-fill" style="--width: 79%;"></div></div>
+                </div>
+                <div class="css-bar-row">
+                    <div class="css-bar-header"><span>Week 4</span><span>81%</span></div>
+                    <div class="css-bar-track"><div class="css-bar-fill" style="--width: 81%;"></div></div>
+                </div>
+                <div class="css-bar-row">
+                    <div class="css-bar-header"><span>Current Week</span><span>{{ "%.0f"|format(metrics.health_score | default(82.0)) }}%</span></div>
+                    <div class="css-bar-track"><div class="css-bar-fill" style="--width: {{ '%.1f'|format(metrics.health_score | default(82.0)) }}%;"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <div style="background: var(--bg-surface-hover); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            <h4 style="font-size: 0.95rem; color: var(--color-warning); margin-bottom: 1rem;"><i class="fa-solid fa-shield-cat"></i> Telemetry Risk Factors</h4>
+            
+            <div style="display: flex; flex-direction: column; gap: 1rem; font-size: 0.85rem;">
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                    <span>Stock Deficit Weight:</span>
+                    <strong>35.0 Pts Max</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                    <span>Stockout Proximity Weight:</span>
+                    <strong>25.0 Pts Max</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                    <span>Expiry Proximity Weight:</span>
+                    <strong>20.0 Pts Max</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                    <span>Consumption Surge / Anomaly Weight:</span>
+                    <strong>20.0 Pts Max</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-weight: 700; color: var(--primary-cyan);">
+                    <span>Total Risk Score Cap:</span>
+                    <span>100.0 Points</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

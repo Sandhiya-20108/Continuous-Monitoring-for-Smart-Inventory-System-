@@ -1,0 +1,23 @@
+{% if stock_product %}
+<!-- UPDATE STOCK QUANTITY MODAL (SERVER-SIDE RENDERED) -->
+<div class="modal-overlay active">
+    <div class="modal-card" style="max-width: 380px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+            <h3 style="font-size: 1.05rem; color: var(--text-main);">Update Stock Level</h3>
+            <a href="{{ request.path }}" class="drawer-close" title="Close Modal">&times;</a>
+        </div>
+        <form action="{{ url_for('web.update_stock', product_id=stock_product._id) }}" method="POST" style="display: flex; flex-direction: column; gap: 1rem;">
+            <div class="form-group">
+                <label>Stock Level for {{ stock_product.name }}:</label>
+                <input type="number" name="current_stock" value="{{ stock_product.current_stock }}" class="form-control" style="padding-left:1rem;" min="0" required>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+                <a href="{{ request.path }}" class="btn-header-action">Cancel</a>
+                <button type="submit" class="btn-header-action" style="background: var(--primary-accent); border-color: var(--primary-accent);">
+                    <i class="fa-solid fa-check"></i> Update
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}

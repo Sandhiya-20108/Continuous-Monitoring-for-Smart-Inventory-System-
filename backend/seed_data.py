@@ -1,0 +1,407 @@
+import os
+import sys
+import logging
+from datetime import datetime
+
+# Ensure root workspace directory is in sys.path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from backend.config import Config
+from backend.database import MongoDBConnection
+from backend.repositories.inventory_repository import InventoryRepository
+from backend.utils import risk_engine
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logger = logging.getLogger("seed_data")
+
+DEMO_PRODUCTS = [
+    # 1. Medical Supplies
+    {
+        "_id": "prod-001",
+        "sku": "MED-GLV-100",
+        "name": "Surgical Nitrile Gloves (Box of 100)",
+        "category": "Medical Supplies",
+        "current_stock": 14,
+        "min_stock": 50,
+        "unit_price": 24.50,
+        "unit": "Boxes",
+        "average_daily_usage": 8.0,
+        "today_movement": 24,
+        "daily_usage_history": [6.0, 7.0, 7.5, 8.0, 10.0, 14.0, 24.0],
+        "expiry_date": "2026-08-30",
+        "location": "Medical Ward A",
+        "supplier": "Medline Healthcare"
+    },
+    {
+        "_id": "prod-002",
+        "sku": "MED-INS-10ML",
+        "name": "Insulin Glargine Vials 10ml",
+        "category": "Medical Supplies",
+        "current_stock": 18,
+        "min_stock": 40,
+        "unit_price": 85.00,
+        "unit": "Vials",
+        "average_daily_usage": 4.5,
+        "today_movement": 8,
+        "daily_usage_history": [3.0, 3.5, 4.0, 4.2, 4.5, 5.0, 8.0],
+        "expiry_date": "2026-09-05",
+        "location": "Cold Chain Vault B",
+        "supplier": "Novo Nordisk Pharma"
+    },
+    {
+        "_id": "prod-003",
+        "sku": "MED-MSK-50P",
+        "name": "3-Ply Surgical Face Masks (Pack of 50)",
+        "category": "Medical Supplies",
+        "current_stock": 45,
+        "min_stock": 60,
+        "unit_price": 12.99,
+        "unit": "Packs",
+        "average_daily_usage": 5.0,
+        "today_movement": 6,
+        "daily_usage_history": [5.0, 4.8, 5.2, 5.0, 5.1, 4.9, 6.0],
+        "expiry_date": "2028-06-30",
+        "location": "Medical Store R2",
+        "supplier": "3M Healthcare"
+    },
+    {
+        "_id": "prod-004",
+        "sku": "MED-SYR-10ML",
+        "name": "Disposable Sterile Syringes 10ml",
+        "category": "Medical Supplies",
+        "current_stock": 250,
+        "min_stock": 80,
+        "unit_price": 0.45,
+        "unit": "Units",
+        "average_daily_usage": 12.0,
+        "today_movement": 15,
+        "daily_usage_history": [11.5, 12.0, 12.2, 11.8, 12.5, 12.0, 15.0],
+        "expiry_date": "2029-12-31",
+        "location": "Medical Store R1",
+        "supplier": "BD Medical Systems"
+    },
+
+    # 2. Electronics
+    {
+        "_id": "prod-005",
+        "sku": "ELE-RFID-W1",
+        "name": "Industrial RFID Warehouse Readers",
+        "category": "Electronics",
+        "current_stock": 4,
+        "min_stock": 20,
+        "unit_price": 450.00,
+        "unit": "Units",
+        "average_daily_usage": 2.5,
+        "today_movement": 9,
+        "daily_usage_history": [1.5, 2.0, 2.2, 2.5, 4.0, 6.0, 9.0],
+        "expiry_date": "2030-01-01",
+        "location": "Tech Depot E1",
+        "supplier": "Zebra Technologies"
+    },
+    {
+        "_id": "prod-006",
+        "sku": "ELE-SNS-24V",
+        "name": "Photoelectric Industrial Sensors 24V",
+        "category": "Electronics",
+        "current_stock": 12,
+        "min_stock": 25,
+        "unit_price": 89.50,
+        "unit": "Units",
+        "average_daily_usage": 3.0,
+        "today_movement": 4,
+        "daily_usage_history": [2.0, 2.5, 2.8, 3.0, 3.2, 3.5, 4.0],
+        "expiry_date": "2030-01-01",
+        "location": "Tech Depot E2",
+        "supplier": "Omron Automation"
+    },
+    {
+        "_id": "prod-007",
+        "sku": "ELE-INK-THM",
+        "name": "High-Yield Thermal Printer Ink Cartridge",
+        "category": "Electronics",
+        "current_stock": 22,
+        "min_stock": 30,
+        "unit_price": 65.00,
+        "unit": "Units",
+        "average_daily_usage": 2.0,
+        "today_movement": 3,
+        "daily_usage_history": [2.0, 2.0, 1.8, 2.2, 2.0, 2.1, 3.0],
+        "expiry_date": "2027-05-15",
+        "location": "Office Supply Bay",
+        "supplier": "Epson Industrial"
+    },
+    {
+        "_id": "prod-008",
+        "sku": "ELE-SWT-24P",
+        "name": "Managed 24-Port Gigabit Network Switch",
+        "category": "Electronics",
+        "current_stock": 35,
+        "min_stock": 10,
+        "unit_price": 320.00,
+        "unit": "Units",
+        "average_daily_usage": 0.8,
+        "today_movement": 1,
+        "daily_usage_history": [0.8, 0.7, 0.8, 0.9, 0.8, 0.7, 1.0],
+        "expiry_date": "2032-01-01",
+        "location": "IT Rack Room",
+        "supplier": "Cisco Systems"
+    },
+
+    # 3. Perishables
+    {
+        "_id": "prod-009",
+        "sku": "PER-MLK-1L",
+        "name": "Organic Dairy Fresh Milk 1L",
+        "category": "Perishables",
+        "current_stock": 8,
+        "min_stock": 50,
+        "unit_price": 3.49,
+        "unit": "Cartons",
+        "average_daily_usage": 10.0,
+        "today_movement": 12,
+        "daily_usage_history": [8.0, 9.0, 9.5, 10.0, 11.0, 10.5, 12.0],
+        "expiry_date": "2026-08-28",
+        "location": "Cold Room C1",
+        "supplier": "Horizon Organic Farms"
+    },
+    {
+        "_id": "prod-010",
+        "sku": "PER-BRD-WHT",
+        "name": "Fresh Artisan Whole Wheat Bread",
+        "category": "Perishables",
+        "current_stock": 15,
+        "min_stock": 40,
+        "unit_price": 4.25,
+        "unit": "Loaves",
+        "average_daily_usage": 8.0,
+        "today_movement": 10,
+        "daily_usage_history": [7.0, 7.5, 8.0, 8.0, 8.5, 9.0, 10.0],
+        "expiry_date": "2026-08-29",
+        "location": "Bakery Storage",
+        "supplier": "Golden Grain Bakery"
+    },
+    {
+        "_id": "prod-011",
+        "sku": "PER-SLD-250",
+        "name": "Pre-Packaged Caesar Salad Bowl 250g",
+        "category": "Perishables",
+        "current_stock": 28,
+        "min_stock": 35,
+        "unit_price": 5.99,
+        "unit": "Bowls",
+        "average_daily_usage": 6.0,
+        "today_movement": 7,
+        "daily_usage_history": [5.5, 6.0, 6.2, 5.8, 6.0, 6.1, 7.0],
+        "expiry_date": "2026-09-04",
+        "location": "Chilled Shelf 4",
+        "supplier": "Fresh Express Prepared Foods"
+    },
+    {
+        "_id": "prod-012",
+        "sku": "PER-SLM-200",
+        "name": "Vacuum-Sealed Smoked Salmon 200g",
+        "category": "Perishables",
+        "current_stock": 95,
+        "min_stock": 25,
+        "unit_price": 14.50,
+        "unit": "Packs",
+        "average_daily_usage": 3.0,
+        "today_movement": 3,
+        "daily_usage_history": [3.0, 2.9, 3.1, 3.0, 3.0, 3.2, 3.0],
+        "expiry_date": "2027-02-28",
+        "location": "Cold Vault 2",
+        "supplier": "Nordic Seafood Co"
+    },
+
+    # 4. Industrial
+    {
+        "_id": "prod-013",
+        "sku": "IND-BRG-X1",
+        "name": "Industrial Heavy-Duty Shaft Bearing X1",
+        "category": "Industrial",
+        "current_stock": 5,
+        "min_stock": 30,
+        "unit_price": 125.00,
+        "unit": "Units",
+        "average_daily_usage": 3.5,
+        "today_movement": 14,
+        "daily_usage_history": [2.0, 2.5, 3.0, 3.5, 5.0, 8.0, 14.0],
+        "expiry_date": "2031-01-01",
+        "location": "Heavy Parts Bay H1",
+        "supplier": "SKF Industrial Bearings"
+    },
+    {
+        "_id": "prod-014",
+        "sku": "IND-HYD-20L",
+        "name": "Synthetic Hydraulic Fluid ISO 46 20L",
+        "category": "Industrial",
+        "current_stock": 14,
+        "min_stock": 35,
+        "unit_price": 110.00,
+        "unit": "Drums",
+        "average_daily_usage": 2.8,
+        "today_movement": 4,
+        "daily_usage_history": [2.0, 2.2, 2.5, 2.8, 3.0, 3.2, 4.0],
+        "expiry_date": "2028-11-30",
+        "location": "Chemical Storage H2",
+        "supplier": "Mobil Industrial Lubricants"
+    },
+    {
+        "_id": "prod-015",
+        "sku": "IND-FST-500",
+        "name": "Stainless Steel Heavy Fasteners (Box of 500)",
+        "category": "Industrial",
+        "current_stock": 42,
+        "min_stock": 50,
+        "unit_price": 48.00,
+        "unit": "Boxes",
+        "average_daily_usage": 4.0,
+        "today_movement": 5,
+        "daily_usage_history": [4.0, 4.0, 3.8, 4.2, 4.0, 4.1, 5.0],
+        "expiry_date": "2035-01-01",
+        "location": "Hardware Rack 3",
+        "supplier": "Fastenal Supply"
+    },
+    {
+        "_id": "prod-016",
+        "sku": "IND-BLT-RMB",
+        "name": "Reinforced Rubber Conveyor Belt Segments",
+        "category": "Industrial",
+        "current_stock": 120,
+        "min_stock": 30,
+        "unit_price": 210.00,
+        "unit": "Meters",
+        "average_daily_usage": 2.0,
+        "today_movement": 2,
+        "daily_usage_history": [2.0, 2.0, 2.0, 1.9, 2.1, 2.0, 2.0],
+        "expiry_date": "2032-01-01",
+        "location": "Plant Floor Supply",
+        "supplier": "Continental Conveyor Belts"
+    },
+
+    # 5. Consumables
+    {
+        "_id": "prod-017",
+        "sku": "CON-PPR-50P",
+        "name": "Thermal Receipt Paper Rolls (Pack of 50)",
+        "category": "Consumables",
+        "current_stock": 9,
+        "min_stock": 45,
+        "unit_price": 28.00,
+        "unit": "Packs",
+        "average_daily_usage": 6.0,
+        "today_movement": 18,
+        "daily_usage_history": [4.0, 4.5, 5.0, 6.0, 8.0, 12.0, 18.0],
+        "expiry_date": "2028-04-30",
+        "location": "Supply Room S1",
+        "supplier": "PaperMate Supply"
+    },
+    {
+        "_id": "prod-018",
+        "sku": "CON-BOX-25P",
+        "name": "Heavy-Duty Corrugated Shipping Boxes (Pack of 25)",
+        "category": "Consumables",
+        "current_stock": 24,
+        "min_stock": 60,
+        "unit_price": 32.50,
+        "unit": "Packs",
+        "average_daily_usage": 7.5,
+        "today_movement": 10,
+        "daily_usage_history": [6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 10.0],
+        "expiry_date": "2030-01-01",
+        "location": "Packing Station P1",
+        "supplier": "Uline Packaging"
+    },
+    {
+        "_id": "prod-019",
+        "sku": "CON-CLN-5L",
+        "name": "Industrial Degreaser & Surface Cleaner 5L",
+        "category": "Consumables",
+        "current_stock": 32,
+        "min_stock": 40,
+        "unit_price": 18.75,
+        "unit": "Jug",
+        "average_daily_usage": 2.5,
+        "today_movement": 3,
+        "daily_usage_history": [2.5, 2.5, 2.4, 2.6, 2.5, 2.5, 3.0],
+        "expiry_date": "2027-09-30",
+        "location": "Janitorial Closet J1",
+        "supplier": "Ecolab Cleaning Solutions"
+    },
+    {
+        "_id": "prod-020",
+        "sku": "CON-A4P-5RM",
+        "name": "A4 Multipurpose Copy Paper 80gsm (Box of 5 Reams)",
+        "category": "Consumables",
+        "current_stock": 180,
+        "min_stock": 40,
+        "unit_price": 34.00,
+        "unit": "Boxes",
+        "average_daily_usage": 5.0,
+        "today_movement": 5,
+        "daily_usage_history": [5.0, 5.0, 4.9, 5.1, 5.0, 5.0, 5.0],
+        "expiry_date": "2032-01-01",
+        "location": "Central Archives",
+        "supplier": "Georgia-Pacific Paper"
+    }
+]
+
+def run_seed():
+    logger.info("Initializing MongoDB connection for data seeding...")
+    db_conn = MongoDBConnection()
+    
+    if not db_conn.connect():
+        logger.warning("MongoDB connection offline. Operating on fallback JSON file store...")
+
+    repo = InventoryRepository(db_conn)
+    repo.create_indexes()
+
+    coll = db_conn.get_collection() if db_conn.is_connected() else None
+
+    inserted_count = 0
+    updated_count = 0
+
+    risk_counts = {
+        "Safe": 0,
+        "Warning": 0,
+        "High Risk": 0,
+        "Critical": 0
+    }
+
+    for prod in DEMO_PRODUCTS:
+        # Calculate dynamic risk score using risk engine
+        calc = risk_engine.calculate_inventory_risk_score(prod)
+        lvl = calc["level"]
+        risk_counts[lvl] = risk_counts.get(lvl, 0) + 1
+
+        now_iso = datetime.utcnow().isoformat()
+        prod["last_updated"] = now_iso
+
+        if coll is not None:
+            res = coll.replace_one({"_id": prod["_id"]}, prod, upsert=True)
+            if res.upserted_id is not None:
+                inserted_count += 1
+            else:
+                updated_count += 1
+
+    total_products = len(DEMO_PRODUCTS)
+    logger.info("=== SEEDING COMPLETED SUCCESSFULLY ===")
+    logger.info(f"Database: {Config.MONGODB_DATABASE}")
+    logger.info(f"Collection: {Config.MONGODB_COLLECTION}")
+    logger.info(f"Total Products Seeded: {total_products}")
+    logger.info(f"Safe Products: {risk_counts['Safe']}")
+    logger.info(f"Warning Products: {risk_counts['Warning']}")
+    logger.info(f"High Risk Products: {risk_counts['High Risk']}")
+    logger.info(f"Critical Products: {risk_counts['Critical']}")
+
+    return {
+        "total_products": total_products,
+        "inserted": inserted_count,
+        "updated": updated_count,
+        "risk_counts": risk_counts,
+        "database": Config.MONGODB_DATABASE,
+        "collection": Config.MONGODB_COLLECTION
+    }
+
+if __name__ == "__main__":
+    run_seed()

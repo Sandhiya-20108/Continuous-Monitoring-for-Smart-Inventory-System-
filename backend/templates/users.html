@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Staff User Administration | Continuous Monitoring for Smart Inventory System{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3><i class="fa-solid fa-users-gear" style="color: var(--primary-accent);"></i> Staff User Management</h3>
+    <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.5rem;">Create and manage Inventory Staff accounts for warehouse personnel.</p>
+    
+    {% if error %}
+    <div class="login-alert-banner active" style="margin-bottom: 1rem;">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span>{{ error }}</span>
+    </div>
+    {% endif %}
+
+    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
+        <form action="{{ url_for('web.create_staff') }}" method="POST" style="display: flex; flex-direction: column; gap: 1rem; background: var(--bg-surface-hover); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            <h4 style="font-size: 0.9rem; color: var(--primary-cyan);">Create Staff Account</h4>
+            <input type="email" name="email" class="form-control" placeholder="Email Address" required style="padding-left: 1rem;">
+            <input type="text" name="username" class="form-control" placeholder="Username" required style="padding-left: 1rem;">
+            <input type="text" name="full_name" class="form-control" placeholder="Full Name" required style="padding-left: 1rem;">
+            <input type="password" name="password" class="form-control" placeholder="Password" required style="padding-left: 1rem;">
+            <button type="submit" class="btn-login" style="margin-top: 0.5rem;">
+                <i class="fa-solid fa-user-plus"></i> Create Account
+            </button>
+        </form>
+
+        <div class="table-responsive">
+            <table class="inventory-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email / Username</th>
+                        <th>Created Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if staff_users %}
+                        {% for s in staff_users %}
+                        <tr>
+                            <td><strong>{{ s.full_name | default(s.username) }}</strong></td>
+                            <td>{{ s.email }}<br><span style="font-size:0.7rem; color:var(--text-muted);">@{{ s.username }}</span></td>
+                            <td>{{ s.created_at[:10] if s.created_at else '' }}</td>
+                            <td>
+                                <form action="{{ url_for('web.delete_staff', user_id=s._id) }}" method="POST" style="margin:0;" onsubmit="return confirm('Delete staff account {{ s.full_name | default(s.username) }}?');">
+                                    <button type="submit" class="btn-act btn-act-danger">
+                                        <i class="fa-solid fa-trash"></i> Delete
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="4" style="text-align:center; padding:1.5rem; color:var(--text-muted);">
+                                <i class="fa-solid fa-user-slash"></i> No staff user accounts found
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

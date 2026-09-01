@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Central Risk Alert Feed | Continuous Monitoring for Smart Inventory System{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h3><i class="fa-solid fa-bell" style="color: var(--color-warning);"></i> Central Alert Feed</h3>
+        <div class="risk-tabs">
+            <a href="{{ url_for('web.alerts', severity='all') }}" class="tab-btn {% if selected_severity == 'all' %}active{% endif %}">All Alerts</a>
+            <a href="{{ url_for('web.alerts', severity='Critical') }}" class="tab-btn {% if selected_severity == 'Critical' %}active{% endif %}">Critical</a>
+            <a href="{{ url_for('web.alerts', severity='High Risk') }}" class="tab-btn {% if selected_severity == 'High Risk' %}active{% endif %}">High Risk</a>
+        </div>
+    </div>
+
+    <div class="alerts-feed" style="max-height: none;">
+        {% if alerts %}
+            {% for a in alerts %}
+            <div class="alert-item {{ a.severity | replace(' ', '-') }}">
+                <div class="alert-item-head">
+                    <span>{{ a.type | default('Alert') }} - {{ a.product_name }}</span>
+                    <span style="font-size:0.7rem; color:var(--text-dim);">{{ a.timestamp[11:19] if a.timestamp else '' }}</span>
+                </div>
+                <div style="font-size:0.78rem; color:var(--text-muted);">{{ a.message }}</div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <i class="fa-solid fa-shield-check" style="color:var(--color-safe);"></i>
+                <div>No active risk alerts found for the selected filter.</div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

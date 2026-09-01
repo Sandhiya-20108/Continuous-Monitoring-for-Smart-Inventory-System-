@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventory Telemetry Monitor | Continuous Monitoring for Smart Inventory System{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="table-header-bar">
+        <div class="table-title-group">
+            <h3><i class="fa-solid fa-boxes-stacked" style="color: var(--primary-accent);"></i> Inventory Items Monitor</h3>
+            <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">{{ products | length }} Products</span>
+        </div>
+
+        <div class="table-controls">
+            {% if session.get('user') and session['user'].get('role') == 'admin' %}
+            <div style="display: flex; gap: 0.5rem;">
+                <a href="{{ url_for('web.inventory', add_product='true', category=selected_category, risk_level=selected_risk, search=search_query) }}" class="btn-header-action" style="background: var(--primary-accent); border-color: var(--primary-accent);">
+                    <i class="fa-solid fa-plus"></i> Add Product
+                </a>
+                <a href="{{ url_for('web.users') }}" class="btn-header-action" style="background: rgba(59, 130, 246, 0.15); border-color: var(--border-highlight); color: var(--primary-cyan);">
+                    <i class="fa-solid fa-users-gear"></i> Staff Accounts
+                </a>
+            </div>
+            {% endif %}
+
+            <form action="{{ url_for('web.inventory') }}" method="GET" style="display: flex; gap: 0.5rem; align-items: center;">
+                <input type="hidden" name="risk_level" value="{{ selected_risk }}">
+                <input type="hidden" name="search" value="{{ search_query }}">
+
+                <select name="category" class="filter-select" onchange="this.form.submit()">
+                    <option value="all" {% if selected_category == 'all' %}selected{% endif %}>All Categories</option>
+                    <option value="Perishable" {% if selected_category == 'Perishable' %}selected{% endif %}>Perishable</option>
+                    <option value="Electronics" {% if selected_category == 'Electronics' %}selected{% endif %}>Electronics</option>
+                    <option value="Chemicals" {% if selected_category == 'Chemicals' %}selected{% endif %}>Chemicals</option>
+                    <option value="Industrial" {% if selected_category == 'Industrial' %}selected{% endif %}>Industrial</option>
+                    <option value="Consumables" {% if selected_category == 'Consumables' %}selected{% endif %}>Consumables</option>
+                </select>
+            </form>
+
+            <div class="risk-tabs">
+                {% for r in ['all', 'Critical', 'High Risk', 'Warning', 'Safe'] %}
+                <a href="{{ url_for('web.inventory', category=selected_category, risk_level=r, search=search_query) }}" 
+                   class="tab-btn {% if selected_risk == r %}active{% endif %}">
+                    {{ r | capitalize }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="inventory-table">
+            <thead>
+                <tr>
+                    <th>Product Details</th>
+                    <th>Category</th>
+                    <th>Stock Level / Min</th>
+                    <th>Stockout Prediction</th>
+                    <th>Expiry Status</th>
+                    <th>Demand Trend</th>
+                    <th>Risk Level</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if products %}
+                    {% for p in products %}
+                    {% set stock_pct = [(p.current_stock / (p.min_stock * 2) * 100), 100] | min %}
+                    {% set stock_color = '#ef4444' if p.current_stock <= p.min_stock else '#10b981' %}
+                    {% set exp_status = p.expiry_info.status if p.expiry_info else 'Good' %}
+                    {% set days_stockout = p.days_to_stockout if p.days_to_stockout is defined else 999 %}
+                    {% set risk_level = p.risk_level | default('Safe') %}
+                    {% set risk_score = p.risk_score | default(0.0) %}
+
+                    <tr>
+                        <td>
+                            <div class="prod-cell">
+                                <div class="category-icon-box">
+                                    <i class="fa-solid {% if p.category == 'Electronics' %}fa-microchip{% elif p.category == 'Perishable' %}fa-apple-whole{% elif p.category == 'Chemicals' %}fa-flask{% elif p.category == 'Industrial' %}fa-gears{% else %}fa-box{% endif %}"></i>
+                                </div>
+                                <div class="prod-info">
+                                    <span class="prod-name">{{ p.name }}</span>
+                                    <span class="prod-sku">SKU: {{ p.sku }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="badge" style="background:var(--bg-surface-hover); color:var(--text-muted); padding:0.25rem 0.5rem; border-radius:4px; font-size:0.75rem;">{{ p.category }}</span></td>
+                        <td>
+                            <div style="font-weight:600;">{{ p.current_stock }} / {{ p.min_stock }} <span style="font-size:0.7rem; color:var(--text-dim);">{{ p.unit | default('Units') }}</span></div>
+                            <div class="stock-meter-bar">
+                                <div class="stock-meter-fill" style="--width: {{ '%.1f'|format(stock_pct) }}%; --bg: {{ stock_color }};"></div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="{% if days_stockout <= 3 %}text-critical-color{% else %}text-normal-color{% endif %}">
+                                {% if days_stockout <= 0 %}Out of Stock{% else %}{{ days_stockout }} days{% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div style="font-size:0.78rem;">{{ p.expiry_date | default('--') }}</div>
+                            <span class="risk-pill {% if 'Critical' in exp_status %}Critical{% else %}Safe{% endif %}" style="font-size:0.65rem; padding:0.15rem 0.4rem; margin-top:2px;">{{ exp_status }}</span>
+                        </td>
+                        <td><span class="{% if p.demand_trend == 'Increasing' %}text-trend-increasing{% else %}text-trend-stable{% endif %}">{{ p.demand_trend | default('Stable') }}</span></td>
+                        <td><span class="risk-pill {{ risk_level | replace(' ', '-') }}">{{ "%.1f"|format(risk_score) }} - {{ risk_level }}</span></td>
+                        <td>
+                            <div class="action-group">
+                                <a href="{{ url_for('web.inventory', view_id=p._id, category=selected_category, risk_level=selected_risk, search=search_query) }}" class="btn-act" title="View Details & Timeline">
+                                    <i class="fa-solid fa-eye"></i> View
+                                </a>
+                                <a href="{{ url_for('web.inventory', stock_id=p._id, category=selected_category, risk_level=selected_risk, search=search_query) }}" class="btn-act" title="Update Stock Quantity">
+                                    <i class="fa-solid fa-boxes-stacked"></i> Stock
+                                </a>
+                                {% if session.get('user') and session['user'].get('role') == 'admin' %}
+                                <a href="{{ url_for('web.inventory', edit_id=p._id, category=selected_category, risk_level=selected_risk, search=search_query) }}" class="btn-act" title="Edit Product">
+                                    <i class="fa-solid fa-pen"></i>
+                                </a>
+                                <form action="{{ url_for('web.delete_product', product_id=p._id) }}" method="POST" style="margin:0;" onsubmit="return confirm('Delete product {{ p.name }}?');">
+                                    <button type="submit" class="btn-act btn-act-danger" title="Delete Product">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="8">
+                            <div class="empty-state">
+                                <i class="fa-solid fa-boxes-packing"></i>
+                                <div style="font-weight:600; color:var(--text-main);">No inventory items found</div>
+                                <div style="font-size:0.8rem;">Try clearing search query or category filters.</div>
+                            </div>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

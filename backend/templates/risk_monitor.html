@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+
+{% block title %}Predictive Risk Intelligence | Continuous Monitoring for Smart Inventory System{% endblock %}
+
+{% block content %}
+<!-- Risk Summary KPI Cards -->
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span>Monitored Products</span>
+            <i class="fa-solid fa-cubes kpi-icon"></i>
+        </div>
+        <div class="kpi-value">{{ products | length }}</div>
+        <div class="kpi-subtext">Total active inventory items</div>
+    </div>
+
+    <div class="kpi-card" style="border-left: 4px solid var(--color-safe);">
+        <div class="kpi-header">
+            <span>Safe Tier</span>
+            <i class="fa-solid fa-circle-check kpi-icon" style="color: var(--color-safe);"></i>
+        </div>
+        <div class="kpi-value" style="color: var(--color-safe);">{{ metrics.counts.safe | default(0) }}</div>
+        <div class="kpi-subtext">Optimal stock buffer</div>
+    </div>
+
+    <div class="kpi-card" style="border-left: 4px solid var(--color-warning);">
+        <div class="kpi-header">
+            <span>Warning Tier</span>
+            <i class="fa-solid fa-triangle-exclamation kpi-icon" style="color: var(--color-warning);"></i>
+        </div>
+        <div class="kpi-value" style="color: var(--color-warning);">{{ metrics.counts.warning | default(0) }}</div>
+        <div class="kpi-subtext">Stock approaching min limit</div>
+    </div>
+
+    <div class="kpi-card" style="border-left: 4px solid var(--color-high);">
+        <div class="kpi-header">
+            <span>High Risk Tier</span>
+            <i class="fa-solid fa-circle-exclamation kpi-icon" style="color: var(--color-high);"></i>
+        </div>
+        <div class="kpi-value" style="color: var(--color-high);">{{ metrics.counts.high_risk | default(0) }}</div>
+        <div class="kpi-subtext">Deficit & near stockout</div>
+    </div>
+
+    <div class="kpi-card" style="border-left: 4px solid var(--color-critical);">
+        <div class="kpi-header">
+            <span>Critical Risk Tier</span>
+            <i class="fa-solid fa-bolt kpi-icon" style="color: var(--color-critical);"></i>
+        </div>
+        <div class="kpi-value" style="color: var(--color-critical);">{{ metrics.counts.critical | default(0) }}</div>
+        <div class="kpi-subtext">Immediate reorder required</div>
+    </div>
+</div>
+
+<!-- Charts Split Grid (Pure CSS Meters) -->
+<div class="dashboard-split-grid">
+    <div class="card">
+        <h3><i class="fa-solid fa-chart-pie" style="color: var(--primary-accent);"></i> Risk Tier Distribution</h3>
+        <div style="margin-top: 1.5rem;">
+            {% set total_prods = products | length %}
+            {% set crit_pct = (metrics.counts.critical / total_prods * 100) if total_prods > 0 else 0 %}
+            {% set high_pct = (metrics.counts.high_risk / total_prods * 100) if total_prods > 0 else 0 %}
+            {% set warn_pct = (metrics.counts.warning / total_prods * 100) if total_prods > 0 else 0 %}
+            {% set safe_pct = (metrics.counts.safe / total_prods * 100) if total_prods > 0 else 0 %}
+
+            <div class="css-donut-chart" style="--gradient: conic-gradient(#ef4444 0% {{ '%.1f'|format(crit_pct) }}%, #f97316 {{ '%.1f'|format(crit_pct) }}% {{ '%.1f'|format(crit_pct + high_pct) }}%, #f59e0b {{ '%.1f'|format(crit_pct + high_pct) }}% {{ '%.1f'|format(crit_pct + high_pct + warn_pct) }}%, #10b981 {{ '%.1f'|format(crit_pct + high_pct + warn_pct) }}% 100%);">
+                <div class="css-donut-inner">
+                    <span>{{ total_prods }}</span>
+                    <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 500;">Items</span>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-around; margin-top: 1.5rem; font-size: 0.78rem;">
+                <div><span style="color:#ef4444;">●</span> Critical: {{ metrics.counts.critical | default(0) }}</div>
+                <div><span style="color:#f97316;">●</span> High: {{ metrics.counts.high_risk | default(0) }}</div>
+                <div><span style="color:#f59e0b;">●</span> Warning: {{ metrics.counts.warning | default(0) }}</div>
+                <div><span style="color:#10b981;">●</span> Safe: {{ metrics.counts.safe | default(0) }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3><i class="fa-solid fa-chart-column" style="color: var(--primary-cyan);"></i> Category Risk Analytics</h3>
+        <div class="css-bar-chart" style="margin-top: 1rem;">
+            {% for cat_name, cat_count in metrics.category_breakdown.items() %}
+            {% set cat_pct = (cat_count / total_prods * 100) if total_prods > 0 else 0 %}
+            <div class="css-bar-row">
+                <div class="css-bar-header">
+                    <span>{{ cat_name }}</span>
+                    <span>{{ cat_count }} items</span>
+                </div>
+                <div class="css-bar-track">
+                    <div class="css-bar-fill" style="--width: {{ '%.1f'|format(cat_pct) }}%;"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Prioritized Risk Assessment Table -->
+<div class="card">
+    <div class="table-header-bar">
+        <div class="table-title-group">
+            <h3><i class="fa-solid fa-arrow-down-wide-short" style="color: var(--color-critical);"></i> Prioritized Risk Assessment Table</h3>
+            <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">Sorted by Risk Severity</span>
+        </div>
+
+        <a href="{{ request.full_path }}" class="btn-header-action">
+            <i class="fa-solid fa-rotate-right"></i> Refresh Risk Data
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="inventory-table">
+            <thead>
+                <tr>
+                    <th>Product Details</th>
+                    <th>Category</th>
+                    <th>Current Stock / Min</th>
+                    <th>Daily Usage</th>
+                    <th>Stockout Proximity</th>
+                    <th>Risk Score & Tier</th>
+                    <th>Expiry Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if products %}
+                    {% for p in products %}
+                    {% set stock_pct = [(p.current_stock / (p.min_stock * 2) * 100), 100] | min %}
+                    {% set stock_color = '#ef4444' if p.current_stock <= p.min_stock else '#10b981' %}
+                    {% set exp_status = p.expiry_info.status if p.expiry_info else 'Good' %}
+                    {% set days_stockout = p.days_to_stockout if p.days_to_stockout is defined else 999 %}
+                    {% set risk_level = p.risk_level | default('Safe') %}
+                    {% set risk_score = p.risk_score | default(0.0) %}
+
+                    <tr>
+                        <td>
+                            <div class="prod-cell">
+                                <div class="category-icon-box">
+                                    <i class="fa-solid {% if p.category == 'Electronics' %}fa-microchip{% elif p.category == 'Perishable' %}fa-apple-whole{% elif p.category == 'Chemicals' %}fa-flask{% elif p.category == 'Industrial' %}fa-gears{% else %}fa-box{% endif %}"></i>
+                                </div>
+                                <div class="prod-info">
+                                    <span class="prod-name">{{ p.name }}</span>
+                                    <span class="prod-sku">SKU: {{ p.sku }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="badge" style="background:var(--bg-surface-hover); color:var(--text-muted); padding:0.25rem 0.5rem; border-radius:4px; font-size:0.75rem;">{{ p.category }}</span></td>
+                        <td>
+                            <div style="font-weight:600;">{{ p.current_stock }} / {{ p.min_stock }} <span style="font-size:0.7rem; color:var(--text-dim);">{{ p.unit | default('Units') }}</span></div>
+                            <div class="stock-meter-bar">
+                                <div class="stock-meter-fill" style="--width: {{ '%.1f'|format(stock_pct) }}%; --bg: {{ stock_color }};"></div>
+                            </div>
+                        </td>
+                        <td><span style="font-weight:600;">{{ p.average_daily_usage }} / day</span></td>
+                        <td>
+                            <div class="{% if days_stockout <= 3 %}text-critical-color{% else %}text-normal-color{% endif %}">
+                                {% if days_stockout <= 0 %}Out of Stock{% else %}{{ days_stockout }} days{% endif %}
+                            </div>
+                        </td>
+                        <td><span class="risk-pill {{ risk_level | replace(' ', '-') }}">{{ "%.1f"|format(risk_score) }} - {{ risk_level }}</span></td>
+                        <td>
+                            <div style="font-size:0.78rem;">{{ p.expiry_date | default('--') }}</div>
+                            <span class="risk-pill {% if 'Critical' in exp_status %}Critical{% else %}Safe{% endif %}" style="font-size:0.65rem; padding:0.15rem 0.4rem; margin-top:2px;">{{ exp_status }}</span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('web.risk_monitor', view_id=p._id) }}" class="btn-act" style="background:var(--primary-accent); border-color:var(--primary-accent); color:#ffffff;" title="View Risk Explanation & Timeline">
+                                <i class="fa-solid fa-circle-info"></i> Why Risky?
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

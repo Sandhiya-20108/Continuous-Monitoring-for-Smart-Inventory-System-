@@ -1,0 +1,30 @@
+<!-- Top Application Header -->
+<header class="app-header">
+    <div class="header-left">
+        <h1 class="page-title">{{ page_title | default('Dashboard Overview') }}</h1>
+        <div class="breadcrumb">Overview / {{ page_breadcrumb | default('Inventory Intelligence') }}</div>
+    </div>
+
+    <div class="header-right">
+        <form action="{{ url_for('web.inventory') }}" method="GET" class="global-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" name="search" value="{{ search_query | default('') }}" placeholder="Search inventory SKU or item...">
+        </form>
+
+        <div class="monitoring-pulse-badge">
+            <span class="pulse-dot"></span>
+            <span>MONITORING: ACTIVE</span>
+        </div>
+
+        <form action="{{ url_for('web.simulate_tick') }}" method="POST" style="margin:0;">
+            <input type="hidden" name="redirect_url" value="{{ request.full_path }}">
+            <button type="submit" class="btn-header-action" title="Simulate Telemetry Consumption Tick">
+                <i class="fa-solid fa-bolt"></i> Simulate Tick
+            </button>
+        </form>
+
+        <a href="{{ request.full_path }}" class="btn-header-action" title="Refresh Page Data">
+            <i class="fa-solid fa-rotate-right"></i> Refresh
+        </a>
+    </div>
+</header>

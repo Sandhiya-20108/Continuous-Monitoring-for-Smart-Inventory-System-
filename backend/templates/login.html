@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign In | Continuous Monitoring for Smart Inventory System{% endblock %}
+
+{% block login_content %}
+<div class="login-split-container">
+    <!-- Left Hero Section -->
+    <div class="login-hero-side">
+        <div class="login-hero-overlay"></div>
+        
+        <div class="login-hero-content">
+            <div class="hero-brand-badge">
+                <i class="fa-solid fa-shield-halved"></i> Inventory Intelligence v2.0
+            </div>
+            
+            <h1>Continuous Monitoring for <span>Smart Inventory System</span></h1>
+            <p class="login-hero-subtitle">Predict inventory risks before they become problems with continuous telemetry monitoring and automated risk intelligence.</p>
+            
+            <div class="feature-bullets">
+                <div class="bullet-item">
+                    <div class="bullet-icon"><i class="fa-solid fa-chart-line"></i></div>
+                    <span>Real-Time Inventory Monitoring</span>
+                </div>
+                <div class="bullet-item">
+                    <div class="bullet-icon"><i class="fa-solid fa-brain"></i></div>
+                    <span>Predictive Stock Risk Analysis</span>
+                </div>
+                <div class="bullet-item">
+                    <div class="bullet-icon"><i class="fa-solid fa-bell"></i></div>
+                    <span>Smart Alerts & Insights</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="hero-footer-text">
+            &copy; 2026 Smart Inventory Risk Intelligence & Continuous Monitoring Platform
+        </div>
+    </div>
+
+    <!-- Right Login Panel -->
+    <div class="login-form-side">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="login-logo-row">
+                    <i class="fa-solid fa-shield-halved login-logo-icon"></i>
+                    <h2 class="login-title">Smart Inventory</h2>
+                </div>
+                <p class="login-subtitle">Sign in to access your inventory control dashboard</p>
+            </div>
+
+            {% if error %}
+            <div class="login-alert-banner active">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span>{{ error }}</span>
+            </div>
+            {% endif %}
+
+            <form class="login-form" action="{{ url_for('web.login') }}" method="POST">
+                <div class="form-group">
+                    <label for="loginIdentifier">Email or Username</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-envelope input-icon"></i>
+                        <input type="text" id="loginIdentifier" name="identifier" class="form-control" placeholder="name@inventory.com" required autocomplete="username">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="loginPassword" name="password" class="form-control" placeholder="Enter password" required autocomplete="current-password">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-login">
+                    <i class="fa-solid fa-right-to-bracket"></i> Sign In to Dashboard
+                </button>
+            </form>
+
+            <details class="demo-credentials-drawer">
+                <summary><i class="fa-solid fa-key"></i> Demo Credentials</summary>
+                <div class="demo-credentials-content">
+                    <div>👑 <strong>Admin:</strong> <code>admin@inventory.com</code> / <code>Admin@123456</code></div>
+                    <div>📦 <strong>Staff:</strong> <code>staff@inventory.com</code> / <code>Staff@123456</code></div>
+                </div>
+            </details>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+{% block title %}Executive Overview | Continuous Monitoring for Smart Inventory System{% endblock %}
+
+{% block content %}
+<!-- Welcome Overview Hero Card -->
+<div class="welcome-hero-card">
+    <div class="welcome-hero-text">
+        <h2>Good morning, {{ session.get('user', {}).get('full_name', 'Administrator') }}</h2>
+        <p>Tuesday, September 1, 2026 • Real-time continuous telemetry monitoring active.</p>
+    </div>
+    <img src="{{ url_for('static', filename='img/dashboard_hero_graphic.png') }}" alt="Telemetry Visual" class="welcome-hero-graphic">
+</div>
+
+<!-- KPI Metric Grid -->
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span>Overall Inventory Health</span>
+            <i class="fa-solid fa-heart-pulse kpi-icon"></i>
+        </div>
+        <div class="kpi-value">{{ "%.0f"|format(metrics.health_score | default(100.0)) }}%</div>
+        <div class="kpi-trend up"><i class="fa-solid fa-arrow-trend-up"></i> <span>+4.2% stability</span></div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span>Total Inventory Value</span>
+            <i class="fa-solid fa-vault kpi-icon"></i>
+        </div>
+        <div class="kpi-value">${{ "{:,.2f}".format(metrics.total_inventory_value | default(0.0)) }}</div>
+        <div class="kpi-subtext">{{ metrics.total_products | default(0) }} items monitored</div>
+    </div>
+
+    <div class="kpi-card" style="border-left: 4px solid var(--color-critical);">
+        <div class="kpi-header">
+            <span>Critical Risk Items</span>
+            <i class="fa-solid fa-triangle-exclamation kpi-icon" style="color: var(--color-critical);"></i>
+        </div>
+        <div class="kpi-value" style="color: var(--color-critical);">
+            {{ (metrics.counts.critical | default(0)) + (metrics.counts.high_risk | default(0)) }}
+        </div>
+        <div class="kpi-trend down"><i class="fa-solid fa-exclamation"></i> <span>Reorder required</span></div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span>Expiring & Anomalies</span>
+            <i class="fa-solid fa-clock-rotate-left kpi-icon"></i>
+        </div>
+        <div class="kpi-value">
+            {{ (metrics.counts.expiring_soon | default(0)) + (metrics.counts.anomalies | default(0)) }}
+        </div>
+        <div class="kpi-subtext">{{ metrics.counts.expiring_soon | default(0) }} expiring soon • {{ metrics.counts.anomalies | default(0) }} anomalies</div>
+    </div>
+</div>
+
+<!-- Split Grid: Simulator & Alert Feed -->
+<div class="dashboard-split-grid">
+    <!-- Smart Demand Simulator -->
+    <div class="card">
+        <div style="margin-bottom: 1.2rem;">
+            <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-main);"><i class="fa-solid fa-sliders" style="color: var(--primary-cyan);"></i> Smart Demand Simulator</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">Simulate demand changes and predict future inventory risk score.</p>
+        </div>
+
+        <form action="{{ url_for('web.dashboard') }}" method="GET" class="simulator-box">
+            <div class="form-group">
+                <label for="simSelectProduct">Target Inventory Product:</label>
+                <select id="simSelectProduct" name="sim_product_id" class="filter-select" style="width: 100%;" onchange="this.form.submit()">
+                    <option value="">-- Select Inventory Item --</option>
+                    {% for p in products %}
+                    <option value="{{ p._id }}" {% if selected_sim_product and selected_sim_product._id == p._id %}selected{% endif %}>
+                        {{ p.name }} (Stock: {{ p.current_stock }} {{ p.unit }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="sim-slider-row">
+                <div class="sim-slider-header">
+                    <span>Demand Change Variance:</span>
+                    <span class="sim-slider-val">{% if sim_demand_change_pct >= 0 %}+{% endif %}{{ sim_demand_change_pct }}%</span>
+                </div>
+                <input type="range" name="sim_demand_change_pct" min="-50" max="200" step="10" value="{{ sim_demand_change_pct }}" onchange="this.form.submit()">
+            </div>
+
+            <div class="sim-output-card">
+                {% if sim_result %}
+                <div class="sim-row"><span>Adjusted Usage Rate:</span><strong>{{ sim_result.adjusted_daily_usage }} / day</strong></div>
+                <div class="sim-row"><span>Projected Days to Stockout:</span><strong>{{ sim_result.new_days_to_stockout }} days</strong></div>
+                <div class="sim-row" style="color: var(--primary-cyan); font-weight: 700;"><span>Suggested Reorder Qty:</span><strong>{{ sim_result.suggested_reorder_qty }} units</strong></div>
+                <p style="font-size: 0.75rem; color: var(--text-dim); border-top: 1px dashed var(--border-color); padding-top: 0.4rem;">
+                    {{ sim_result.impact_summary }}
+                </p>
+                {% else %}
+                <div class="sim-row"><span>Adjusted Usage Rate:</span><strong>-- / day</strong></div>
+                <div class="sim-row"><span>Projected Days to Stockout:</span><strong>-- days</strong></div>
+                <div class="sim-row" style="color: var(--primary-cyan); font-weight: 700;"><span>Simulated Risk Score:</span><strong>-- / 100</strong></div>
+                <p style="font-size: 0.75rem; color: var(--text-dim); border-top: 1px dashed var(--border-color); padding-top: 0.4rem;">
+                    Select a product to run simulation.
+                </p>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Alert Center Feed -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-main);"><i class="fa-solid fa-bell" style="color: var(--color-warning);"></i> Active Risk Alerts</h3>
+            <span class="risk-pill Critical">{{ alerts | length }} Alerts</span>
+        </div>
+
+        <div class="alerts-feed">
+            {% if alerts %}
+                {% for a in alerts[:6] %}
+                <div class="alert-item {{ a.severity | replace(' ', '-') }}">
+                    <div class="alert-item-head">
+                        <span>{{ a.type | default('Alert') }}</span>
+                        <span style="font-size:0.7rem; color:var(--text-dim);">{{ a.timestamp[11:19] if a.timestamp else '' }}</span>
+                    </div>
+                    <div style="font-size:0.78rem; color:var(--text-muted);">{{ a.message }}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="fa-solid fa-shield-check" style="color:var(--color-safe);"></i>
+                    <div>All monitored products are currently within safe inventory levels.</div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

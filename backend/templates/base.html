@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Continuous Monitoring for Smart Inventory System{% endblock %}</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Design System CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+
+    {% if session.get('user') %}
+    <!-- MAIN ENTERPRISE APPLICATION SHELL -->
+    <div class="app-shell">
+        {% include 'components/sidebar.html' %}
+        
+        <div class="main-content">
+            {% include 'components/header.html' %}
+
+            <div class="page-view active">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals & Drawers rendered server-side when target query params exist -->
+    {% include 'components/product_drawer.html' %}
+    {% include 'components/product_modal.html' %}
+    {% include 'components/stock_modal.html' %}
+
+    {% else %}
+    <!-- LOGIN PAGE VIEW -->
+    {% block login_content %}{% endblock %}
+    {% endif %}
+
+</body>
+</html>
