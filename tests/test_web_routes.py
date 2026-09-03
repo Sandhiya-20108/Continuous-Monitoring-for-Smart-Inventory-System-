@@ -24,8 +24,25 @@ class TestServerSideWebRoutes(unittest.TestCase):
         self.assertIn(b"Executive Overview", response.data)
         self.assertIn(b"Overall Inventory Health", response.data)
 
+    def test_dashboard_displays_current_date(self):
+        from datetime import datetime
+        self.client.post("/login", data={
+            "identifier": "admin@inventory.com",
+            "password": "Admin@123456"
+        })
+        response = self.client.get("/dashboard")
+        self.assertEqual(response.status_code, 200)
+        now = datetime.now()
+        expected_date = now.strftime("%A, %B ") + str(now.day) + now.strftime(", %Y")
+        self.assertIn(expected_date.encode('utf-8'), response.data)
+
     def test_unauthenticated_access_redirects_to_login(self):
         response = self.client.get("/dashboard", follow_redirects=False)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/login", response.location)
+
+    def test_root_url_unauthenticated_redirects_to_login(self):
+        response = self.client.get("/", follow_redirects=False)
         self.assertEqual(response.status_code, 302)
         self.assertIn("/login", response.location)
 
@@ -48,6 +65,9 @@ class TestServerSideWebRoutes(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Predictive Risk Intelligence", response.data)
         self.assertIn(b"Prioritized Risk Assessment Table", response.data)
+        self.assertIn(b"Risk Tier Distribution", response.data)
+        self.assertIn(b"css-donut-chart", response.data)
+        self.assertIn(b"conic-gradient", response.data)
 
     def test_alerts_page(self):
         self.client.post("/login", data={
@@ -103,6 +123,11 @@ class TestServerSideWebRoutes(unittest.TestCase):
         logout_res = self.client.post("/logout", follow_redirects=True)
         self.assertEqual(logout_res.status_code, 200)
         self.assertIn(b"Sign In to Dashboard", logout_res.data)
+
+    def test_simulate_tick_route(self):
+        self.client.post("/login", data={"identifier": "admin@inventory.com", "password": "Admin@123456"})
+        res = self.client.post("/simulate-tick", data={"redirect_url": "/dashboard"}, follow_redirects=True)
+        self.assertEqual(res.status_code, 200)
 
 if __name__ == "__main__":
     unittest.main()

@@ -57,12 +57,22 @@
         <h3><i class="fa-solid fa-chart-pie" style="color: var(--primary-accent);"></i> Risk Tier Distribution</h3>
         <div style="margin-top: 1.5rem;">
             {% set total_prods = products | length %}
-            {% set crit_pct = (metrics.counts.critical / total_prods * 100) if total_prods > 0 else 0 %}
-            {% set high_pct = (metrics.counts.high_risk / total_prods * 100) if total_prods > 0 else 0 %}
-            {% set warn_pct = (metrics.counts.warning / total_prods * 100) if total_prods > 0 else 0 %}
-            {% set safe_pct = (metrics.counts.safe / total_prods * 100) if total_prods > 0 else 0 %}
+            {% set crit_cnt = metrics.counts.critical | default(0) %}
+            {% set high_cnt = metrics.counts.high_risk | default(0) %}
+            {% set warn_cnt = metrics.counts.warning | default(0) %}
+            {% set safe_cnt = metrics.counts.safe | default(0) %}
 
-            <div class="css-donut-chart" style="--gradient: conic-gradient(#ef4444 0% {{ '%.1f'|format(crit_pct) }}%, #f97316 {{ '%.1f'|format(crit_pct) }}% {{ '%.1f'|format(crit_pct + high_pct) }}%, #f59e0b {{ '%.1f'|format(crit_pct + high_pct) }}% {{ '%.1f'|format(crit_pct + high_pct + warn_pct) }}%, #10b981 {{ '%.1f'|format(crit_pct + high_pct + warn_pct) }}% 100%);">
+            {% if total_prods > 0 %}
+                {% set p1 = (crit_cnt / total_prods * 100) %}
+                {% set p2 = p1 + (high_cnt / total_prods * 100) %}
+                {% set p3 = p2 + (warn_cnt / total_prods * 100) %}
+                {% set conic_str = "conic-gradient(#ef4444 0% " ~ "%.2f"|format(p1) ~ "%, #f97316 " ~ "%.2f"|format(p1) ~ "% " ~ "%.2f"|format(p2) ~ "%, #f59e0b " ~ "%.2f"|format(p2) ~ "% " ~ "%.2f"|format(p3) ~ "%, #10b981 " ~ "%.2f"|format(p3) ~ "% 100%)" %}
+            {% else %}
+                {% set conic_str = "conic-gradient(#374151 0% 100%)" %}
+            {% endif %}
+            {% set donut_style_attr = 'style="background: ' ~ conic_str ~ '; --gradient: ' ~ conic_str ~ ';"' %}
+
+            <div class="css-donut-chart" {{ donut_style_attr | safe }}>
                 <div class="css-donut-inner">
                     <span>{{ total_prods }}</span>
                     <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 500;">Items</span>
@@ -94,6 +104,97 @@
             </div>
             {% endfor %}
         </div>
+    </div>
+</div>
+
+<!-- Smart Reorder Recommendation Section -->
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div class="table-header-bar">
+        <div class="table-title-group">
+            <h3><i class="fa-solid fa-cart-flatbed" style="color: var(--primary-cyan);"></i> Smart Reorder Recommendations</h3>
+            <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">Calculated automatically based on safety stock deficits and risk tiers (Sorted by Risk Severity)</span>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="inventory-table">
+            <thead>
+                <tr>
+                    <th>Product / SKU</th>
+                    <th>Current Stock</th>
+                    <th>Minimum Stock</th>
+                    <th>Risk Tier</th>
+                    <th>Stock Deficit</th>
+                    <th>Recommended Reorder</th>
+                    <th>Recommended Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set rec_items = reorder_recommendations | default(products) %}
+                {% if rec_items %}
+                    {% for item in rec_items %}
+                    {% set r_info = item.reorder_info | default(None) %}
+                    {% set cur_stk = r_info.current_stock if r_info else item.current_stock %}
+                    {% set min_stk = r_info.min_stock if r_info else item.min_stock %}
+                    {% set deficit = r_info.stock_deficit if r_info else (item.stock_deficit | default(0)) %}
+                    {% set rec_qty = r_info.recommended_reorder if r_info else (item.recommended_reorder | default(0)) %}
+                    {% set rec_act = r_info.recommended_action if r_info else (item.recommended_action | default('NO REORDER REQUIRED')) %}
+                    {% set r_tier = item.risk_level | default('Safe') %}
+                    {% set unit_str = item.unit | default('Units') %}
+
+                    <tr>
+                        <td>
+                            <div class="prod-cell">
+                                <div class="category-icon-box">
+                                    <i class="fa-solid {% if item.category == 'Electronics' %}fa-microchip{% elif item.category == 'Perishable' %}fa-apple-whole{% elif item.category == 'Chemicals' %}fa-flask{% elif item.category == 'Industrial' %}fa-gears{% else %}fa-box{% endif %}"></i>
+                                </div>
+                                <div class="prod-info">
+                                    <span class="prod-name">{{ item.name }}</span>
+                                    <span class="prod-sku">SKU: {{ item.sku }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span style="font-weight: 600;">{{ cur_stk }}</span> <span style="font-size: 0.72rem; color: var(--text-dim);">{{ unit_str }}</span></td>
+                        <td><span style="font-weight: 600;">{{ min_stk }}</span> <span style="font-size: 0.72rem; color: var(--text-dim);">{{ unit_str }}</span></td>
+                        <td><span class="risk-pill {{ r_tier | replace(' ', '-') }}">{{ r_tier }}</span></td>
+                        <td>
+                            {% if deficit > 0 %}
+                            <span style="color: var(--color-critical); font-weight: 700;">-{{ deficit }} {{ unit_str }}</span>
+                            {% else %}
+                            <span style="color: var(--text-muted);">0</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if rec_qty > 0 %}
+                            <strong style="color: var(--primary-cyan); font-weight: 700;">+{{ rec_qty }} {{ unit_str }}</strong>
+                            {% else %}
+                            <span style="color: var(--text-muted);">0</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if rec_act == 'REORDER IMMEDIATELY' %}
+                            <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: var(--color-critical); border: 1px solid var(--color-critical); font-weight: 700; padding: 0.3rem 0.6rem;">
+                                <i class="fa-solid fa-circle-exclamation" style="margin-right: 4px;"></i> {{ rec_act }}
+                            </span>
+                            {% elif rec_act == 'REORDER SOON' %}
+                            <span class="badge" style="background: rgba(249, 115, 22, 0.15); color: var(--color-high); border: 1px solid var(--color-high); font-weight: 700; padding: 0.3rem 0.6rem;">
+                                <i class="fa-solid fa-triangle-exclamation" style="margin-right: 4px;"></i> {{ rec_act }}
+                            </span>
+                            {% elif rec_act == 'MONITOR & PLAN REORDER' %}
+                            <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: var(--color-warning); border: 1px solid var(--color-warning); font-weight: 600; padding: 0.3rem 0.6rem;">
+                                <i class="fa-solid fa-clock" style="margin-right: 4px;"></i> {{ rec_act }}
+                            </span>
+                            {% else %}
+                            <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: var(--color-safe); border: 1px solid var(--color-safe); font-weight: 500; padding: 0.3rem 0.6rem;">
+                                <i class="fa-solid fa-circle-check" style="margin-right: 4px;"></i> {{ rec_act }}
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% endif %}
+            </tbody>
+        </table>
     </div>
 </div>
 

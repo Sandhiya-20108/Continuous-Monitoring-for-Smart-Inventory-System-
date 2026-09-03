@@ -3,6 +3,12 @@ from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError, PyMongoError
 from backend.config import Config
 
+try:
+    import certifi
+    HAS_CERTIFI = True
+except ImportError:
+    HAS_CERTIFI = False
+
 logger = logging.getLogger("inventory_database")
 
 class MongoDBConnection:
@@ -25,10 +31,16 @@ class MongoDBConnection:
             return False
 
         try:
+            client_kwargs = {
+                "serverSelectionTimeoutMS": self.timeout_ms,
+                "connectTimeoutMS": self.timeout_ms
+            }
+            if HAS_CERTIFI:
+                client_kwargs["tlsCAFile"] = certifi.where()
+
             self.client = MongoClient(
                 self.uri,
-                serverSelectionTimeoutMS=self.timeout_ms,
-                connectTimeoutMS=self.timeout_ms
+                **client_kwargs
             )
             # Send ping to confirm connection
             self.client.admin.command('ping')

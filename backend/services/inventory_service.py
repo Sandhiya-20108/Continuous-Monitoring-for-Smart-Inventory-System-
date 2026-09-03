@@ -71,6 +71,7 @@ class InventoryService:
         for item in raw_products:
             risk_info = risk_engine.calculate_inventory_risk_score(item)
             recommendation = risk_engine.generate_product_recommendation(item, risk_info)
+            reorder_info = risk_engine.calculate_reorder_recommendation(item, risk_info["level"])
             
             augmented = dict(item)
             augmented["risk_score"] = risk_info["score"]
@@ -81,6 +82,11 @@ class InventoryService:
             augmented["anomaly_info"] = risk_info["anomaly_info"]
             augmented["risk_breakdown"] = risk_info["breakdown"]
             augmented["recommendation"] = recommendation
+            augmented["reorder_info"] = reorder_info
+            augmented["stock_deficit"] = reorder_info["stock_deficit"]
+            augmented["recommended_reorder"] = reorder_info["recommended_reorder"]
+            augmented["recommended_action"] = reorder_info["recommended_action"]
+            augmented["requires_reorder"] = reorder_info["requires_reorder"]
 
             # Filtering
             if category and category.lower() != "all" and item.get("category", "").lower() != category.lower():
@@ -100,6 +106,11 @@ class InventoryService:
         # Sort by risk_score descending so high-risk items appear first
         results.sort(key=lambda x: x["risk_score"], reverse=True)
         return results
+
+    def get_reorder_recommendations(self) -> list:
+        """Returns products sorted by risk tier priority for Smart Reorder Recommendations."""
+        products = self.get_all_products()
+        return risk_engine.get_reorder_recommendations(products)
 
     def get_product_by_id(self, product_id: str) -> dict:
         """Finds a single product by ID with full risk analysis."""

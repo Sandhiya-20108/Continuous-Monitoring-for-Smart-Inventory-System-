@@ -55,12 +55,12 @@
             </div>
             {% endif %}
 
-            <form class="login-form" action="{{ url_for('web.login') }}" method="POST">
+            <form class="login-form" action="{{ url_for('web.login') }}" method="POST" autocomplete="off">
                 <div class="form-group">
                     <label for="loginIdentifier">Email or Username</label>
                     <div class="input-wrapper">
                         <i class="fa-solid fa-envelope input-icon"></i>
-                        <input type="text" id="loginIdentifier" name="identifier" class="form-control" placeholder="name@inventory.com" required autocomplete="username">
+                        <input type="text" id="loginIdentifier" name="identifier" class="form-control" placeholder="name@inventory.com" required value="" autocomplete="off">
                     </div>
                 </div>
 
@@ -68,7 +68,7 @@
                     <label for="loginPassword">Password</label>
                     <div class="input-wrapper">
                         <i class="fa-solid fa-lock input-icon"></i>
-                        <input type="password" id="loginPassword" name="password" class="form-control" placeholder="Enter password" required autocomplete="current-password">
+                        <input type="password" id="loginPassword" name="password" class="form-control" placeholder="Enter password" required value="" autocomplete="off">
                     </div>
                 </div>
 

@@ -7,7 +7,7 @@
 <div class="welcome-hero-card">
     <div class="welcome-hero-text">
         <h2>Good morning, {{ session.get('user', {}).get('full_name', 'Administrator') }}</h2>
-        <p>Tuesday, September 1, 2026 • Real-time continuous telemetry monitoring active.</p>
+        <p>{{ current_date }} • Real-time continuous telemetry monitoring active.</p>
     </div>
     <img src="{{ url_for('static', filename='img/dashboard_hero_graphic.png') }}" alt="Telemetry Visual" class="welcome-hero-graphic">
 </div>
@@ -67,7 +67,7 @@
         <form action="{{ url_for('web.dashboard') }}" method="GET" class="simulator-box">
             <div class="form-group">
                 <label for="simSelectProduct">Target Inventory Product:</label>
-                <select id="simSelectProduct" name="sim_product_id" class="filter-select" style="width: 100%;" onchange="this.form.submit()">
+                <select id="simSelectProduct" name="sim_product_id" class="filter-select" style="width: 100%;">
                     <option value="">-- Select Inventory Item --</option>
                     {% for p in products %}
                     <option value="{{ p._id }}" {% if selected_sim_product and selected_sim_product._id == p._id %}selected{% endif %}>
@@ -82,8 +82,12 @@
                     <span>Demand Change Variance:</span>
                     <span class="sim-slider-val">{% if sim_demand_change_pct >= 0 %}+{% endif %}{{ sim_demand_change_pct }}%</span>
                 </div>
-                <input type="range" name="sim_demand_change_pct" min="-50" max="200" step="10" value="{{ sim_demand_change_pct }}" onchange="this.form.submit()">
+                <input type="range" name="sim_demand_change_pct" min="-50" max="200" step="10" value="{{ sim_demand_change_pct }}">
             </div>
+
+            <button type="submit" class="btn-header-action" style="margin-top: 0.5rem; margin-bottom: 1rem; width: 100%; justify-content: center; background: var(--primary-accent); border-color: var(--primary-accent);">
+                <i class="fa-solid fa-calculator"></i> Run Simulation
+            </button>
 
             <div class="sim-output-card">
                 {% if sim_result %}

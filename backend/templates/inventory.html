@@ -26,7 +26,7 @@
                 <input type="hidden" name="risk_level" value="{{ selected_risk }}">
                 <input type="hidden" name="search" value="{{ search_query }}">
 
-                <select name="category" class="filter-select" onchange="this.form.submit()">
+                <select name="category" class="filter-select">
                     <option value="all" {% if selected_category == 'all' %}selected{% endif %}>All Categories</option>
                     <option value="Perishable" {% if selected_category == 'Perishable' %}selected{% endif %}>Perishable</option>
                     <option value="Electronics" {% if selected_category == 'Electronics' %}selected{% endif %}>Electronics</option>
@@ -34,6 +34,7 @@
                     <option value="Industrial" {% if selected_category == 'Industrial' %}selected{% endif %}>Industrial</option>
                     <option value="Consumables" {% if selected_category == 'Consumables' %}selected{% endif %}>Consumables</option>
                 </select>
+                <button type="submit" class="btn-header-action" title="Apply Category Filter"><i class="fa-solid fa-filter"></i> Filter</button>
             </form>
 
             <div class="risk-tabs">
@@ -113,7 +114,7 @@
                                 <a href="{{ url_for('web.inventory', edit_id=p._id, category=selected_category, risk_level=selected_risk, search=search_query) }}" class="btn-act" title="Edit Product">
                                     <i class="fa-solid fa-pen"></i>
                                 </a>
-                                <form action="{{ url_for('web.delete_product', product_id=p._id) }}" method="POST" style="margin:0;" onsubmit="return confirm('Delete product {{ p.name }}?');">
+                                <form action="{{ url_for('web.delete_product', product_id=p._id) }}" method="POST" style="margin:0;">
                                     <button type="submit" class="btn-act btn-act-danger" title="Delete Product">
                                         <i class="fa-solid fa-trash"></i>
                                     </button>

@@ -44,7 +44,7 @@
                             <td>{{ s.email }}<br><span style="font-size:0.7rem; color:var(--text-muted);">@{{ s.username }}</span></td>
                             <td>{{ s.created_at[:10] if s.created_at else '' }}</td>
                             <td>
-                                <form action="{{ url_for('web.delete_staff', user_id=s._id) }}" method="POST" style="margin:0;" onsubmit="return confirm('Delete staff account {{ s.full_name | default(s.username) }}?');">
+                                <form action="{{ url_for('web.delete_staff', user_id=s._id) }}" method="POST" style="margin:0;">
                                     <button type="submit" class="btn-act btn-act-danger">
                                         <i class="fa-solid fa-trash"></i> Delete
                                     </button>

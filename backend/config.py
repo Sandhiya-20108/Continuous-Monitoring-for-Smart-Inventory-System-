@@ -28,7 +28,7 @@ class Config:
     MONGODB_DATABASE = (os.getenv("MONGODB_DATABASE") or "smart_inventory").strip()
     MONGODB_COLLECTION = (os.getenv("MONGODB_COLLECTION") or "products").strip()
     MONGODB_USERS_COLLECTION = (os.getenv("MONGODB_USERS_COLLECTION") or "users").strip()
-    MONGODB_TIMEOUT_MS = int(os.getenv("MONGODB_TIMEOUT_MS", 3000))
+    MONGODB_TIMEOUT_MS = int(os.getenv("MONGODB_TIMEOUT_MS", 5000))
 
     # Reference date for static date comparison (matching current environment context)
     CURRENT_SIMULATION_DATE = date(2026, 8, 25)

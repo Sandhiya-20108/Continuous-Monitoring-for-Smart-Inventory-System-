@@ -1,3 +1,4 @@
+from datetime import datetime
 from functools import wraps
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
 from backend.services.inventory_service import InventoryService
@@ -11,7 +12,10 @@ auth_service = AuthService()
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        if not session.get("user"):
+        user = session.get("user")
+        token = session.get("auth_token")
+        if not user or not token or not auth_service.validate_token(token):
+            session.clear()
             return redirect(url_for("web.login_view"))
         return f(*args, **kwargs)
     return decorated
@@ -20,7 +24,9 @@ def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         user = session.get("user")
-        if not user:
+        token = session.get("auth_token")
+        if not user or not token or not auth_service.validate_token(token):
+            session.clear()
             return redirect(url_for("web.login_view"))
         if user.get("role") != "admin":
             flash("Access denied. Administrator privileges required.", "error")
@@ -30,13 +36,18 @@ def admin_required(f):
 
 @web_bp.route("/")
 def index():
-    if session.get("user"):
+    user = session.get("user")
+    token = session.get("auth_token")
+    if user and token and auth_service.validate_token(token):
         return redirect(url_for("web.dashboard"))
+    session.clear()
     return redirect(url_for("web.login_view"))
 
 @web_bp.route("/login", methods=["GET"])
 def login_view():
-    if session.get("user"):
+    user = session.get("user")
+    token = session.get("auth_token")
+    if user and token and auth_service.validate_token(token):
         return redirect(url_for("web.dashboard"))
     return render_template("login.html", error=request.args.get("error"))
 
@@ -82,6 +93,9 @@ def dashboard():
         selected_sim_product = products[0]
         sim_result = risk_engine.simulate_what_if(selected_sim_product, sim_demand_change_pct)
 
+    now = datetime.now()
+    current_date = now.strftime("%A, %B ") + str(now.day) + now.strftime(", %Y")
+
     return render_template(
         "dashboard.html",
         current_view="dashboard",
@@ -92,7 +106,8 @@ def dashboard():
         alerts=alerts,
         selected_sim_product=selected_sim_product,
         sim_demand_change_pct=sim_demand_change_pct,
-        sim_result=sim_result
+        sim_result=sim_result,
+        current_date=current_date
     )
 
 @web_bp.route("/simulate-tick", methods=["POST"])
@@ -200,6 +215,7 @@ def delete_product(product_id):
 def risk_monitor():
     products = inventory_service.get_all_products()
     metrics = inventory_service.get_dashboard_metrics()
+    reorder_recommendations = inventory_service.get_reorder_recommendations()
 
     view_id = request.args.get("view_id")
     drawer_product = inventory_service.get_product_by_id(view_id) if view_id else None
@@ -211,7 +227,8 @@ def risk_monitor():
         page_breadcrumb="Risk Monitor",
         products=products,
         metrics=metrics,
-        drawer_product=drawer_product
+        drawer_product=drawer_product,
+        reorder_recommendations=reorder_recommendations
     )
 
 @web_bp.route("/alerts", methods=["GET"])

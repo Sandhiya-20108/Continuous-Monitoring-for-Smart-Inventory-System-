@@ -260,3 +260,89 @@ def simulate_what_if(product: dict, demand_change_pct: float, target_supply_days
         "suggested_reorder_qty": suggested_reorder_qty,
         "impact_summary": f"At {demand_change_pct:+}% demand, daily usage becomes {adjusted_daily_usage}/day. Stock will last {new_days_to_stockout} days (vs {base_days_to_stockout} days originally)."
     }
+
+
+def calculate_reorder_recommendation(product: dict, risk_level: str = None) -> dict:
+    """
+    Calculates recommended reorder quantity, stock deficit, and recommended action
+    based on current stock, minimum stock limit, and risk tier.
+    """
+    try:
+        raw_current = product.get("current_stock")
+        current_stock = float(raw_current) if raw_current is not None else 0.0
+    except (ValueError, TypeError):
+        current_stock = 0.0
+
+    try:
+        raw_min = product.get("min_stock")
+        min_stock = float(raw_min) if raw_min is not None else 0.0
+    except (ValueError, TypeError):
+        min_stock = 0.0
+
+    current_clean = max(0.0, current_stock)
+    min_clean = max(0.0, min_stock)
+
+    if current_clean < min_clean:
+        deficit = min_clean - current_clean
+        recommended_reorder = deficit
+
+        level = str(risk_level or product.get("risk_level", "SAFE")).upper()
+        if "CRITICAL" in level:
+            action = "REORDER IMMEDIATELY"
+        elif "HIGH" in level:
+            action = "REORDER SOON"
+        elif "WARNING" in level:
+            action = "MONITOR & PLAN REORDER"
+        else:
+            action = "NO REORDER REQUIRED"
+    else:
+        deficit = 0.0
+        recommended_reorder = 0.0
+        action = "NO REORDER REQUIRED"
+
+    def fmt_num(val):
+        if isinstance(val, (int, float)):
+            return int(val) if float(val).is_integer() else round(float(val), 2)
+        return 0
+
+    return {
+        "current_stock": fmt_num(current_stock),
+        "min_stock": fmt_num(min_stock),
+        "stock_deficit": fmt_num(deficit),
+        "recommended_reorder": fmt_num(recommended_reorder),
+        "recommended_action": action,
+        "requires_reorder": recommended_reorder > 0
+    }
+
+
+def get_reorder_recommendations(products: list) -> list:
+    """
+    Computes reorder recommendations for a list of products and sorts them by risk tier priority:
+    CRITICAL (1) -> HIGH (2) -> WARNING (3) -> SAFE (4).
+    Within each tier, items with stock deficit come first (sorted by deficit descending).
+    """
+    tier_priority = {
+        "CRITICAL": 1,
+        "HIGH": 2,
+        "WARNING": 3,
+        "SAFE": 4
+    }
+
+    recs = []
+    for item in products:
+        risk_level = item.get("risk_level", "SAFE")
+        reorder_info = calculate_reorder_recommendation(item, risk_level)
+        rec_item = dict(item)
+        rec_item["reorder_info"] = reorder_info
+        rec_item["stock_deficit"] = reorder_info["stock_deficit"]
+        rec_item["recommended_reorder"] = reorder_info["recommended_reorder"]
+        rec_item["recommended_action"] = reorder_info["recommended_action"]
+        rec_item["requires_reorder"] = reorder_info["requires_reorder"]
+        recs.append(rec_item)
+
+    recs.sort(key=lambda x: (
+        tier_priority.get(str(x.get("risk_level", "SAFE")).upper(), 99),
+        -float(x.get("stock_deficit", 0)),
+        x.get("name", "")
+    ))
+    return recs
