@@ -36,6 +36,36 @@ class TestServerSideWebRoutes(unittest.TestCase):
         expected_date = now.strftime("%A, %B ") + str(now.day) + now.strftime(", %Y")
         self.assertIn(expected_date.encode('utf-8'), response.data)
 
+    def test_dynamic_time_based_greeting(self):
+        from datetime import datetime
+        from backend.routes.web_routes import get_time_based_greeting
+
+        # Test Morning (e.g. 9 AM)
+        dt_morning = datetime(2026, 9, 5, 9, 0, 0)
+        self.assertEqual(get_time_based_greeting(dt_morning), "Good Morning")
+
+        # Test Afternoon (e.g. 2 PM)
+        dt_afternoon = datetime(2026, 9, 5, 14, 0, 0)
+        self.assertEqual(get_time_based_greeting(dt_afternoon), "Good Afternoon")
+
+        # Test Night (e.g. 10 PM)
+        dt_night = datetime(2026, 9, 5, 22, 0, 0)
+        self.assertEqual(get_time_based_greeting(dt_night), "Good Night")
+
+        # Test Early Morning / Night (e.g. 2 AM)
+        dt_early = datetime(2026, 9, 5, 2, 0, 0)
+        self.assertEqual(get_time_based_greeting(dt_early), "Good Night")
+
+        # Test Dashboard Render Contains Current Time-Based Greeting
+        self.client.post("/login", data={
+            "identifier": "admin@inventory.com",
+            "password": "Admin@123456"
+        })
+        res = self.client.get("/dashboard")
+        self.assertEqual(res.status_code, 200)
+        current_greeting = get_time_based_greeting()
+        self.assertIn(current_greeting.encode('utf-8'), res.data)
+
     def test_unauthenticated_access_redirects_to_login(self):
         response = self.client.get("/dashboard", follow_redirects=False)
         self.assertEqual(response.status_code, 302)

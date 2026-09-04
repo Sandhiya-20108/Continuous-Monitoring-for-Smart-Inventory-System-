@@ -72,6 +72,17 @@ def logout():
     session.clear()
     return redirect(url_for("web.login_view"))
 
+def get_time_based_greeting(dt=None):
+    if dt is None:
+        dt = datetime.now()
+    hour = dt.hour
+    if 5 <= hour < 12:
+        return "Good Morning"
+    elif 12 <= hour < 17:
+        return "Good Afternoon"
+    else:
+        return "Good Night"
+
 @web_bp.route("/dashboard", methods=["GET"])
 @login_required
 def dashboard():
@@ -95,6 +106,7 @@ def dashboard():
 
     now = datetime.now()
     current_date = now.strftime("%A, %B ") + str(now.day) + now.strftime(", %Y")
+    greeting = get_time_based_greeting(now)
 
     return render_template(
         "dashboard.html",
@@ -107,7 +119,8 @@ def dashboard():
         selected_sim_product=selected_sim_product,
         sim_demand_change_pct=sim_demand_change_pct,
         sim_result=sim_result,
-        current_date=current_date
+        current_date=current_date,
+        greeting=greeting
     )
 
 @web_bp.route("/simulate-tick", methods=["POST"])

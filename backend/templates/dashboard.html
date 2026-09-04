@@ -6,7 +6,7 @@
 <!-- Welcome Overview Hero Card -->
 <div class="welcome-hero-card">
     <div class="welcome-hero-text">
-        <h2>Good morning, {{ session.get('user', {}).get('full_name', 'Administrator') }}</h2>
+        <h2>{{ greeting }}, {{ session.get('user', {}).get('full_name', 'Administrator') }}</h2>
         <p>{{ current_date }} • Real-time continuous telemetry monitoring active.</p>
     </div>
     <img src="{{ url_for('static', filename='img/dashboard_hero_graphic.png') }}" alt="Telemetry Visual" class="welcome-hero-graphic">
