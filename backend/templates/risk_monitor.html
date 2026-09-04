@@ -228,7 +228,7 @@
             <tbody>
                 {% if products %}
                     {% for p in products %}
-                    {% set stock_pct = [(p.current_stock / (p.min_stock * 2) * 100), 100] | min %}
+                    {% set stock_pct = ([(p.current_stock / (p.min_stock * 2) * 100), 100] | min) if p.min_stock > 0 else (100 if p.current_stock > 0 else 0) %}
                     {% set stock_color = '#ef4444' if p.current_stock <= p.min_stock else '#10b981' %}
                     {% set exp_status = p.expiry_info.status if p.expiry_info else 'Good' %}
                     {% set days_stockout = p.days_to_stockout if p.days_to_stockout is defined else 999 %}

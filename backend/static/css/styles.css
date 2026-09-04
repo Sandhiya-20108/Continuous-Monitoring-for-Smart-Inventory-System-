@@ -1345,3 +1345,125 @@ input[type="range"] {
     .global-search { display: none; }
     .page-view { padding: 1rem; }
 }
+
+/* ==========================================================================
+   LIGHT THEME OVERRIDES (Triggered via session theme class / data-theme)
+   ========================================================================== */
+
+body.light-theme, [data-theme="light"] {
+    --bg-main: #f1f5f9;
+    --bg-surface: #ffffff;
+    --bg-surface-hover: #e2e8f0;
+    --bg-card: #ffffff;
+    --border-color: #cbd5e1;
+    --border-highlight: #94a3b8;
+    
+    /* Brand Accents */
+    --primary-accent: #2563eb;
+    --primary-hover: #1d4ed8;
+    --primary-cyan: #0284c7;
+    --primary-glow: rgba(37, 99, 235, 0.12);
+    
+    /* Status Colors */
+    --color-safe: #059669;
+    --color-safe-bg: rgba(5, 150, 105, 0.12);
+    --color-warning: #d97706;
+    --color-warning-bg: rgba(217, 119, 6, 0.12);
+    --color-high: #ea580c;
+    --color-high-bg: rgba(234, 88, 12, 0.12);
+    --color-critical: #dc2626;
+    --color-critical-bg: rgba(220, 38, 38, 0.12);
+    
+    /* Neutral Text Hierarchy */
+    --text-main: #0f172a;
+    --text-muted: #475569;
+    --text-dim: #64748b;
+}
+
+body.light-theme .login-split-container {
+    background-color: #f1f5f9;
+}
+
+body.light-theme .login-form-side {
+    background: #f1f5f9;
+}
+
+body.light-theme .login-card {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+body.light-theme .form-control {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #0f172a;
+}
+
+body.light-theme .form-control:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+body.light-theme .demo-credentials-drawer {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+}
+
+body.light-theme .demo-credentials-content code {
+    background: #e2e8f0;
+    color: #0284c7;
+}
+
+body.light-theme .card,
+body.light-theme .kpi-card,
+body.light-theme .welcome-hero-card {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+body.light-theme .welcome-hero-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid #cbd5e1;
+}
+
+body.light-theme .welcome-hero-text h2 {
+    color: #0f172a;
+}
+
+body.light-theme .inventory-table th {
+    background: #f8fafc;
+    color: #475569;
+    border-bottom: 1px solid #cbd5e1;
+}
+
+body.light-theme .inventory-table td {
+    border-bottom: 1px solid #cbd5e1;
+}
+
+body.light-theme .inventory-table tbody tr:hover {
+    background: #f1f5f9;
+}
+
+body.light-theme .css-donut-inner {
+    background: #ffffff;
+    color: #0f172a;
+    border: 1px solid #cbd5e1;
+}
+
+body.light-theme .header-date-badge {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    color: #0284c7;
+}
+
+body.light-theme .sim-output-card {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+}
+
+body.light-theme .alert-item {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+}

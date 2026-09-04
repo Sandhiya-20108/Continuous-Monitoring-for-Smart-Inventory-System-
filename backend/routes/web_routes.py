@@ -295,3 +295,10 @@ def delete_staff(user_id):
         flash(res["message"], "error")
 
     return redirect(url_for("web.users"))
+
+@web_bp.route("/toggle-theme", methods=["POST", "GET"])
+def toggle_theme():
+    current_theme = session.get("theme", "dark")
+    session["theme"] = "light" if current_theme == "dark" else "dark"
+    redirect_url = request.form.get("redirect_url") or request.args.get("redirect_url") or request.referrer or url_for("web.dashboard")
+    return redirect(redirect_url)

@@ -13,7 +13,7 @@
     <!-- Custom Design System CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
-<body>
+<body class="{{ session.get('theme', 'dark') }}-theme" data-theme="{{ session.get('theme', 'dark') }}">
 
     {% if session.get('user') %}
     <!-- MAIN ENTERPRISE APPLICATION SHELL -->

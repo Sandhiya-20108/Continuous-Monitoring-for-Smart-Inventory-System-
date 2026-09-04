@@ -23,6 +23,17 @@
             </button>
         </form>
 
+        <form action="{{ url_for('web.toggle_theme') }}" method="POST" style="margin:0;">
+            <input type="hidden" name="redirect_url" value="{{ request.full_path }}">
+            <button type="submit" class="btn-header-action" title="Toggle Light/Dark Theme">
+                {% if session.get('theme', 'dark') == 'light' %}
+                <i class="fa-solid fa-moon"></i> <span>Dark Theme</span>
+                {% else %}
+                <i class="fa-solid fa-sun"></i> <span>Light Theme</span>
+                {% endif %}
+            </button>
+        </form>
+
         <a href="{{ request.full_path }}" class="btn-header-action" title="Refresh Page Data">
             <i class="fa-solid fa-rotate-right"></i> Refresh
         </a>
