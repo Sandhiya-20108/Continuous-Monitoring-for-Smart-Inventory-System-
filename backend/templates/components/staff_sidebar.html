@@ -21,6 +21,14 @@
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <span class="nav-text">Search Products</span>
             </a>
+            <a href="{{ url_for('web.alerts') }}" class="nav-item {% if current_view == 'alerts' %}active{% endif %}" data-tooltip="Alerts Feed">
+                <i class="fa-solid fa-bell"></i>
+                <span class="nav-text">Alerts Feed</span>
+            </a>
+            <a href="{{ url_for('web.staff_transactions') }}" class="nav-item {% if current_view == 'staff_transactions' %}active{% endif %}" data-tooltip="Transactions">
+                <i class="fa-solid fa-receipt"></i>
+                <span class="nav-text">Audit Log</span>
+            </a>
             <a href="{{ url_for('web.staff_profile') }}" class="nav-item {% if current_view == 'staff_profile' %}active{% endif %}" data-tooltip="My Profile">
                 <i class="fa-solid fa-user-gear"></i>
                 <span class="nav-text">My Profile</span>

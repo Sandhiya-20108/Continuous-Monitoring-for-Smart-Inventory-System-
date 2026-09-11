@@ -1351,12 +1351,12 @@ input[type="range"] {
    ========================================================================== */
 
 body.light-theme, [data-theme="light"] {
-    --bg-main: #f1f5f9;
+    --bg-main: #f8fafc;
     --bg-surface: #ffffff;
-    --bg-surface-hover: #e2e8f0;
+    --bg-surface-hover: #f1f5f9;
     --bg-card: #ffffff;
-    --border-color: #cbd5e1;
-    --border-highlight: #94a3b8;
+    --border-color: #e2e8f0;
+    --border-highlight: #cbd5e1;
     
     /* Brand Accents */
     --primary-accent: #2563eb;
@@ -1364,15 +1364,15 @@ body.light-theme, [data-theme="light"] {
     --primary-cyan: #0284c7;
     --primary-glow: rgba(37, 99, 235, 0.12);
     
-    /* Status Colors */
+    /* Status Colors - Deep contrast for light mode */
     --color-safe: #059669;
-    --color-safe-bg: rgba(5, 150, 105, 0.12);
+    --color-safe-bg: #ecfdf5;
     --color-warning: #d97706;
-    --color-warning-bg: rgba(217, 119, 6, 0.12);
+    --color-warning-bg: #fffbeb;
     --color-high: #ea580c;
-    --color-high-bg: rgba(234, 88, 12, 0.12);
+    --color-high-bg: #fff7ed;
     --color-critical: #dc2626;
-    --color-critical-bg: rgba(220, 38, 38, 0.12);
+    --color-critical-bg: #fef2f2;
     
     /* Neutral Text Hierarchy */
     --text-main: #0f172a;
@@ -1380,90 +1380,308 @@ body.light-theme, [data-theme="light"] {
     --text-dim: #64748b;
 }
 
+/* 1. Login Screen Light Mode */
 body.light-theme .login-split-container {
-    background-color: #f1f5f9;
+    background-color: #f8fafc;
 }
-
 body.light-theme .login-form-side {
-    background: #f1f5f9;
+    background: #f8fafc;
 }
-
 body.light-theme .login-card {
     background: #ffffff;
-    border: 1px solid #cbd5e1;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.08);
 }
-
-body.light-theme .form-control {
+body.light-theme .form-control,
+body.light-theme .filter-select {
     background: #ffffff;
     border: 1px solid #cbd5e1;
     color: #0f172a;
 }
-
-body.light-theme .form-control:focus {
+body.light-theme .form-control:focus,
+body.light-theme .filter-select:focus {
     border-color: #2563eb;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
-
-body.light-theme .demo-credentials-drawer {
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
+body.light-theme .form-control::placeholder {
+    color: #94a3b8;
 }
-
+body.light-theme .demo-credentials-drawer {
+    border-top-color: #e2e8f0;
+    color: #475569;
+}
+body.light-theme .demo-credentials-content {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+}
 body.light-theme .demo-credentials-content code {
     background: #e2e8f0;
     color: #0284c7;
 }
 
-body.light-theme .card,
-body.light-theme .kpi-card,
-body.light-theme .welcome-hero-card {
+/* 2. Sidebar Light Mode - Executive Slate Navy Sidebar */
+body.light-theme .sidebar {
+    background: #0f172a;
+    border-right: 1px solid #1e293b;
+}
+body.light-theme .sidebar-header {
+    border-bottom: 1px solid #1e293b;
+}
+body.light-theme .sidebar-title {
+    color: #f8fafc;
+}
+body.light-theme .nav-item {
+    color: #94a3b8;
+}
+body.light-theme .nav-item:hover {
+    color: #f8fafc;
+    background: #1e293b;
+}
+body.light-theme .nav-item.active {
+    color: #ffffff;
+    background: #2563eb;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+body.light-theme .sidebar-footer {
+    border-top: 1px solid #1e293b;
+}
+body.light-theme .user-profile-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+}
+body.light-theme .user-name-text {
+    color: #f8fafc;
+}
+body.light-theme .btn-sidebar-logout {
+    color: #94a3b8;
+}
+body.light-theme .btn-sidebar-logout:hover {
+    color: #f87171;
+    background: rgba(239, 68, 68, 0.2);
+}
+
+/* 3. Header Light Mode */
+body.light-theme .app-header {
     background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+body.light-theme .page-title {
+    color: #0f172a;
+}
+body.light-theme .breadcrumb {
+    color: #64748b;
+}
+body.light-theme .global-search input {
+    background: #f1f5f9;
     border: 1px solid #cbd5e1;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    color: #0f172a;
+}
+body.light-theme .global-search input:focus {
+    background: #ffffff;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+body.light-theme .btn-header-action {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    color: #1e293b;
+}
+body.light-theme .btn-header-action:hover {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #ffffff;
 }
 
+/* 4. Cards & KPI Metrics */
+body.light-theme .card,
+body.light-theme .kpi-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+body.light-theme .kpi-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+}
 body.light-theme .welcome-hero-card {
-    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-    border: 1px solid #cbd5e1;
+    background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
 }
-
 body.light-theme .welcome-hero-text h2 {
     color: #0f172a;
 }
+body.light-theme .welcome-hero-text p {
+    color: #475569;
+}
+body.light-theme .kpi-value {
+    color: #0f172a;
+}
+body.light-theme .kpi-header {
+    color: #475569;
+}
+body.light-theme .kpi-subtext {
+    color: #64748b;
+}
 
+/* 5. Enterprise Data Tables */
 body.light-theme .inventory-table th {
     background: #f8fafc;
-    color: #475569;
+    color: #334155;
     border-bottom: 1px solid #cbd5e1;
 }
-
 body.light-theme .inventory-table td {
-    border-bottom: 1px solid #cbd5e1;
+    border-bottom: 1px solid #e2e8f0;
+    color: #0f172a;
 }
-
 body.light-theme .inventory-table tbody tr:hover {
+    background: #f8fafc;
+}
+body.light-theme .prod-name {
+    color: #0f172a;
+}
+body.light-theme .prod-sku {
+    color: #64748b;
+}
+body.light-theme .risk-tabs {
     background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+}
+body.light-theme .tab-btn {
+    color: #475569;
+}
+body.light-theme .tab-btn.active {
+    background: #2563eb;
+    color: #ffffff;
 }
 
+/* 6. Status Pills & Badges */
+body.light-theme .risk-pill.Safe {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+body.light-theme .risk-pill.Warning {
+    background: #fffbeb;
+    color: #b45309;
+    border: 1px solid #fde68a;
+}
+body.light-theme .risk-pill.High-Risk {
+    background: #fff7ed;
+    color: #c2410c;
+    border: 1px solid #ffedd5;
+}
+body.light-theme .risk-pill.Critical {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+body.light-theme .stock-meter-bar {
+    background: #e2e8f0;
+}
+
+/* 7. Simulator & Alert Feed */
+body.light-theme .sim-output-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+body.light-theme .alert-item {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+body.light-theme .css-donut-chart {
+    background: conic-gradient(var(--bg, #2563eb) var(--deg, 0deg), #e2e8f0 0deg);
+}
 body.light-theme .css-donut-inner {
     background: #ffffff;
     color: #0f172a;
-    border: 1px solid #cbd5e1;
+    border: 1px solid #e2e8f0;
+}
+body.light-theme .css-bar-track {
+    background: #e2e8f0;
 }
 
-body.light-theme .header-date-badge {
+/* 8. Modals & Side Drawers */
+body.light-theme .modal-overlay,
+body.light-theme .drawer-overlay {
+    background: rgba(15, 23, 42, 0.45);
+}
+body.light-theme .modal-card,
+body.light-theme .drawer-content {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
+}
+body.light-theme .drawer-close {
+    color: #64748b;
+}
+body.light-theme .drawer-close:hover {
+    color: #0f172a;
+}
+body.light-theme .btn-act {
     background: #f8fafc;
     border: 1px solid #cbd5e1;
-    color: #0284c7;
+    color: #0f172a;
+}
+body.light-theme .btn-act:hover {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #ffffff;
 }
 
-body.light-theme .sim-output-card {
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
+/* 9. Global Inline Style Contrast Overrides for Light Theme */
+body.light-theme [style*="color: #34d399"] { color: #047857 !important; }
+body.light-theme [style*="color: #f87171"] { color: #b91c1c !important; }
+body.light-theme [style*="color: #fbbf24"] { color: #b45309 !important; }
+body.light-theme [style*="color: #60a5fa"] { color: #1d4ed8 !important; }
+body.light-theme [style*="color: #38bdf8"] { color: #0284c7 !important; }
+body.light-theme [style*="color: #818cf8"] { color: #4338ca !important; }
+
+body.light-theme [style*="background: rgba(255,255,255,0.03)"],
+body.light-theme [style*="background: rgba(255, 255, 255, 0.03)"],
+body.light-theme [style*="background: rgba(255,255,255,0.02)"] {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
 }
 
-body.light-theme .alert-item {
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
+body.light-theme [style*="background: rgba(16, 185, 129, 0.15)"],
+body.light-theme [style*="background: rgba(16, 185, 129, 0.2)"] {
+    background: #ecfdf5 !important;
+    border-color: #a7f3d0 !important;
 }
+
+body.light-theme [style*="background: rgba(239, 68, 68, 0.15)"],
+body.light-theme [style*="background: rgba(239, 68, 68, 0.2)"] {
+    background: #fef2f2 !important;
+    border-color: #fecaca !important;
+}
+
+body.light-theme [style*="background: rgba(59, 130, 246, 0.15)"],
+body.light-theme [style*="background: rgba(59, 130, 246, 0.2)"] {
+    background: #eff6ff !important;
+    border-color: #bfdbfe !important;
+}
+
+body.light-theme [style*="background: rgba(245, 158, 11, 0.15)"],
+body.light-theme [style*="background: rgba(245, 158, 11, 0.2)"] {
+    background: #fffbeb !important;
+    border-color: #fde68a !important;
+}
+
+body.light-theme [style*="background: rgba(99, 102, 241, 0.15)"] {
+    background: #eef2ff !important;
+    border-color: #c7d2fe !important;
+}
+
+body.light-theme .telemetry-table th {
+    background: #f8fafc;
+    color: #334155;
+    border-bottom: 1px solid #cbd5e1;
+}
+body.light-theme .telemetry-table td {
+    color: #0f172a;
+}
+

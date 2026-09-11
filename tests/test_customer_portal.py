@@ -135,9 +135,9 @@ class TestCustomerPortalAndRBAC(unittest.TestCase):
         self.client.get("/demo/staff-login", follow_redirects=True)
         
         # Test invalid product ID
-        res_invalid = self.client.get("/staff/products/non_existent_id_999")
+        res_invalid = self.client.get("/staff/products/non_existent_id_999", follow_redirects=True)
         self.assertEqual(res_invalid.status_code, 200)
-        self.assertIn(b"Product Not Found", res_invalid.data)
+        self.assertIn(b"not found", res_invalid.data.lower())
 
         # Test valid product ID (seeded SKU-MED-001 or prod-001)
         res_valid = self.client.get("/staff/products/prod-001")

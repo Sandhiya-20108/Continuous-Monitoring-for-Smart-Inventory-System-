@@ -251,15 +251,32 @@ def staff_products():
         return redirect(url_for("web.dashboard"))
     
     category = request.args.get("category", "all")
-    products = inventory_service.get_all_products(category=category)
+    filter_type = request.args.get("filter", "all").strip().lower()
+    
+    all_prods = inventory_service.get_all_products(category=category)
+    
+    if filter_type == "low_stock":
+        products = [p for p in all_prods if p.get("current_stock", 0) < p.get("min_stock", 10) or p.get("risk_level") in ["Critical", "High Risk", "Warning"]]
+        title = "Low Stock & Reorder Catalog"
+    elif filter_type == "expiring":
+        products = [p for p in all_prods if p.get("expiry_info", {}).get("is_expiring_soon")]
+        title = "Expiring Batches Catalog"
+    else:
+        products = all_prods
+        title = "Browse Product Catalog"
+
+    stock_id = request.args.get("stock_id")
+    stock_product = inventory_service.get_product_by_id(stock_id) if stock_id else None
 
     return render_template(
         "staff_products.html",
         current_view="staff_products",
-        page_title="Browse Product Catalog",
+        page_title=title,
         page_breadcrumb="Browse Products",
         products=products,
-        selected_category=category
+        selected_category=category,
+        filter_type=filter_type,
+        stock_product=stock_product
     )
 
 @web_bp.route("/staff/products/search", methods=["GET"])
@@ -293,7 +310,11 @@ def staff_product_details(product_id):
         return redirect(url_for("web.dashboard"))
     
     product = inventory_service.get_product_by_id(product_id)
-    history_records = inventory_service.get_product_history(product_id) if product else []
+    if not product:
+        flash(f"Product with ID '{product_id}' not found.", "error")
+        return redirect(url_for("web.staff_products"))
+        
+    history_records = inventory_service.get_product_history(product_id)
 
     return render_template(
         "staff_product_details.html",
@@ -302,6 +323,53 @@ def staff_product_details(product_id):
         page_breadcrumb="Product Details",
         product=product,
         history_records=history_records
+    )
+
+@web_bp.route("/staff/stock/<product_id>", methods=["POST"])
+@login_required
+def staff_update_stock(product_id):
+    user_info = session.get("user", {})
+    user_label = user_info.get("full_name") or user_info.get("username") or "Staff User"
+    user_role = user_info.get("role", "staff")
+
+    operation = request.form.get("operation", "STOCK_IN").strip()
+    quantity_raw = request.form.get("quantity") or "0"
+    notes = request.form.get("notes", "").strip()
+
+    try:
+        qty = int(quantity_raw)
+        res = inventory_service.update_stock_quantity(
+            product_id=product_id,
+            quantity=qty,
+            operation=operation,
+            user=user_label,
+            role=user_role,
+            notes=notes
+        )
+        if not res["success"]:
+            flash(res["message"], "error")
+        else:
+            flash(res["message"], "success")
+    except (ValueError, TypeError):
+        flash("Invalid quantity: Please enter a valid number.", "error")
+
+    redirect_url = request.form.get("redirect_url") or request.referrer or url_for("web.staff_products")
+    return redirect(redirect_url)
+
+@web_bp.route("/staff/transactions", methods=["GET"])
+@login_required
+def staff_transactions():
+    if session.get("user", {}).get("role") == "admin":
+        return redirect(url_for("web.dashboard"))
+
+    recent_transactions = inventory_service.get_recent_transactions(limit=50)
+
+    return render_template(
+        "staff_transactions.html",
+        current_view="staff_transactions",
+        page_title="Audit Trail & Stock History",
+        page_breadcrumb="Recent Transactions",
+        recent_transactions=recent_transactions
     )
 
 @web_bp.route("/staff/profile", methods=["GET"])
@@ -494,7 +562,7 @@ def risk_monitor():
     )
 
 @web_bp.route("/alerts", methods=["GET"])
-@admin_required
+@login_required
 def alerts():
     severity = request.args.get("severity", "all")
     alerts_list = inventory_service.get_alerts(severity_filter=severity)
@@ -507,6 +575,27 @@ def alerts():
         alerts=alerts_list,
         selected_severity=severity
     )
+
+@web_bp.route("/alerts/update-status", methods=["POST"])
+@login_required
+def update_alert_status():
+    user_info = session.get("user", {})
+    user_label = user_info.get("full_name") or user_info.get("username") or "User"
+
+    alert_id = request.form.get("alert_id", "").strip()
+    status = request.form.get("status", "Viewed").strip()
+
+    if alert_id:
+        res = inventory_service.update_alert_status(alert_id=alert_id, status=status, user=user_label)
+        if res["success"]:
+            flash(res["message"], "success")
+        else:
+            flash(res["message"], "error")
+    else:
+        flash("Alert ID is missing.", "error")
+
+    redirect_url = request.form.get("redirect_url") or request.referrer or url_for("web.alerts")
+    return redirect(redirect_url)
 
 @web_bp.route("/analytics", methods=["GET"])
 @admin_required

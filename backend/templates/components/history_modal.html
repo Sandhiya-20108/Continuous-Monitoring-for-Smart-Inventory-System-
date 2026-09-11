@@ -52,7 +52,13 @@
                             <span class="badge" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; font-size: 0.72rem; padding: 0.15rem 0.4rem;">⚙️ ADJUST</span>
                             {% endif %}
                         </td>
-                        <td style="padding: 0.55rem; text-align: right; font-weight: 700; color: {{ '#34d399' if record.quantity_changed > 0 else '#f87171' if record.quantity_changed < 0 else '#60a5fa' }};">
+                        {% if record.quantity_changed > 0 %}
+                        <td style="padding: 0.55rem; text-align: right; font-weight: 700; color: #34d399;">
+                        {% elif record.quantity_changed < 0 %}
+                        <td style="padding: 0.55rem; text-align: right; font-weight: 700; color: #f87171;">
+                        {% else %}
+                        <td style="padding: 0.55rem; text-align: right; font-weight: 700; color: #60a5fa;">
+                        {% endif %}
                             {{ "%+d" | format(record.quantity_changed) }}
                         </td>
                         <td style="padding: 0.55rem; text-align: right; font-weight: 600; color: var(--text-main);">

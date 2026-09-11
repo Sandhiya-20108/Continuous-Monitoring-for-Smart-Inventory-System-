@@ -5,28 +5,51 @@
 {% block content %}
 <div class="content-wrapper">
 
+    <!-- Flash Notifications -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category if category != 'error' else 'danger' }}" style="padding: 0.75rem 1.25rem; margin-bottom: 1rem; border-radius: 6px; background: {% if category == 'error' %}rgba(239, 68, 68, 0.15){% else %}rgba(16, 185, 129, 0.15){% endif %}; border: 1px solid {% if category == 'error' %}rgba(239, 68, 68, 0.3){% else %}rgba(16, 185, 129, 0.3){% endif %}; color: var(--text-main); font-size: 0.9rem;">
+            <i class="fa-solid {% if category == 'error' %}fa-triangle-exclamation{% else %}fa-circle-check{% endif %}" style="margin-right: 0.5rem; color: {% if category == 'error' %}#ef4444{% else %}#10b981{% endif %};"></i> {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
     <!-- Header & Breadcrumb Info -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
         <div>
-            <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-main, #f8fafc); margin-bottom: 0.25rem;">
-                Browse Product Catalog
+            <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.25rem;">
+                {{ page_title | default('Browse Product Catalog') }}
             </h2>
-            <p style="color: var(--text-muted, #94a3b8); font-size: 0.9rem; margin: 0;">
-                Explore live inventory stock levels, category filters, unit prices, and product availability.
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">
+                Explore live inventory stock levels, category filters, reorder recommendations, and perform stock operations.
             </p>
         </div>
-        <a href="{{ url_for('web.staff_dashboard') }}" class="btn-action" style="padding: 0.5rem 1rem; background: var(--bg-hover); border: 1px solid var(--border-color); color: var(--text-main); text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem;">
-            <i class="fa-solid fa-arrow-left"></i> Staff Dashboard
-        </a>
+        <div style="display: flex; gap: 0.6rem;">
+            <a href="{{ url_for('web.staff_transactions') }}" class="btn-header-action">
+                <i class="fa-solid fa-receipt"></i> Recent Transactions
+            </a>
+            <a href="{{ url_for('web.staff_dashboard') }}" class="btn-header-action">
+                <i class="fa-solid fa-arrow-left"></i> Staff Dashboard
+            </a>
+        </div>
     </div>
 
-    <!-- Category Filter Pills -->
-    <div class="panel" style="margin-bottom: 1.5rem; padding: 1rem 1.25rem;">
+    <!-- Category & Quick Filter Pills -->
+    <div class="panel card" style="margin-bottom: 1.5rem; padding: 1rem 1.25rem;">
         <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;">
-            <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-right: 0.5rem;">Filter Category:</span>
-            <a href="{{ url_for('web.staff_products', category='all') }}" class="btn-filter {% if selected_category == 'all' or not selected_category %}active{% endif %}">
-                All Categories
+            <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-right: 0.5rem;">Filters:</span>
+            <a href="{{ url_for('web.staff_products', category='all', filter='all') }}" class="btn-filter {% if selected_category == 'all' and filter_type == 'all' %}active{% endif %}">
+                All Products
             </a>
+            <a href="{{ url_for('web.staff_products', filter='low_stock') }}" class="btn-filter {% if filter_type == 'low_stock' %}active{% endif %}" style="border-color: #fde68a;">
+                ⚠️ Low Stock Items
+            </a>
+            <a href="{{ url_for('web.staff_products', filter='expiring') }}" class="btn-filter {% if filter_type == 'expiring' %}active{% endif %}" style="border-color: #fecaca;">
+                ⏰ Expiring Batches
+            </a>
+            <span style="border-left: 1px solid var(--border-color); height: 20px; margin: 0 0.25rem;"></span>
             <a href="{{ url_for('web.staff_products', category='Healthcare') }}" class="btn-filter {% if selected_category == 'Healthcare' %}active{% endif %}">
                 Healthcare
             </a>
@@ -39,14 +62,11 @@
             <a href="{{ url_for('web.staff_products', category='Safety & Hazmat') }}" class="btn-filter {% if selected_category == 'Safety & Hazmat' %}active{% endif %}">
                 Safety & Hazmat
             </a>
-            <a href="{{ url_for('web.staff_products', category='Office & IT') }}" class="btn-filter {% if selected_category == 'Office & IT' %}active{% endif %}">
-                Office & IT
-            </a>
         </div>
     </div>
 
     <!-- Product Grid / Cards List -->
-    <div class="panel" style="padding: 1.25rem;">
+    <div class="card" style="padding: 1.25rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
             <h3 style="font-size: 1.1rem; font-weight: 700; margin: 0; color: var(--text-main);">
                 Available Inventory Items
@@ -55,53 +75,56 @@
         </div>
 
         {% if not products %}
-        <div style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
-            <i class="fa-solid fa-box-open" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
-            <h4>No products found</h4>
-            <p style="font-size: 0.9rem;">No products match the selected category filter.</p>
-            <a href="{{ url_for('web.staff_products') }}" class="btn-action" style="display: inline-block; margin-top: 1rem; padding: 0.5rem 1rem; background: var(--accent-color); color: #fff; text-decoration: none; border-radius: 6px; font-weight: 600;">Reset Category Filter</a>
+        <div class="empty-state">
+            <i class="fa-solid fa-box-open" style="font-size: 3rem; opacity: 0.5;"></i>
+            <h4 style="font-size: 1.1rem; color: var(--text-main); font-weight: 700;">No products found</h4>
+            <p style="font-size: 0.88rem; color: var(--text-muted); max-width: 400px;">No inventory items match the requested search or status filter.</p>
+            <a href="{{ url_for('web.staff_products') }}" class="btn-header-action" style="margin-top: 0.5rem; background: var(--primary-accent); border-color: var(--primary-accent); color: #fff;">Reset Filters</a>
         </div>
         {% else %}
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1.25rem;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem;">
             {% for product in products %}
-            <div class="product-card" style="background: var(--card-bg, rgba(30, 41, 59, 0.4)); border: 1px solid var(--border-color, rgba(255,255,255,0.08)); border-radius: 10px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <div class="product-card card" style="padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
                 <div>
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
-                        <span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px;">
+                        <span class="badge" style="background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;">
                             {{ product.category }}
                         </span>
                         
                         {% if product.current_stock <= 0 %}
-                        <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px;">
-                            Out of Stock
-                        </span>
+                        <span class="risk-pill Critical">Out of Stock</span>
                         {% elif product.current_stock <= product.min_stock %}
-                        <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px;">
-                            Low Stock
-                        </span>
+                        <span class="risk-pill Warning">Low Stock</span>
                         {% else %}
-                        <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px;">
-                            In Stock
-                        </span>
+                        <span class="risk-pill Safe">In Stock</span>
                         {% endif %}
                     </div>
 
-                    <h4 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.35rem; color: var(--text-main, #f8fafc);">
+                    <h4 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.35rem; color: var(--text-main);">
                         {{ product.name }}
                     </h4>
                     <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.85rem;">
                         SKU: <code>{{ product.sku }}</code>
                     </div>
 
-                    <div style="display: flex; flex-direction: column; gap: 0.4rem; padding: 0.65rem 0; border-top: 1px dashed var(--border-color, rgba(255,255,255,0.08)); border-bottom: 1px dashed var(--border-color, rgba(255,255,255,0.08)); margin-bottom: 1rem; font-size: 0.82rem;">
+                    <!-- Reorder Recommendation Badge -->
+                    {% if product.current_stock < product.min_stock or product.requires_reorder %}
+                    <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 0.5rem 0.75rem; margin-bottom: 0.85rem; font-size: 0.78rem; color: #b45309;">
+                        <i class="fa-solid fa-cart-flatbed"></i> <strong>Reorder Recommendation:</strong>
+                        <div>Suggested Reorder: <strong>{{ product.recommended_reorder | default(product.min_stock - product.current_stock) }} {{ product.unit | default('units') }}</strong></div>
+                        <div style="font-size: 0.72rem; opacity: 0.9;">Action: {{ product.recommended_action | default('Reorder Required') }}</div>
+                    </div>
+                    {% endif %}
+
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem; padding: 0.65rem 0; border-top: 1px dashed var(--border-color); border-bottom: 1px dashed var(--border-color); margin-bottom: 1rem; font-size: 0.82rem;">
                         <div style="display: flex; justify-content: space-between;">
                             <span style="color: var(--text-muted);">Available Quantity:</span>
                             {% if product.current_stock <= 0 %}
-                            <strong style="color: #f87171;">{{ product.current_stock }} {{ product.unit | default('units') }}</strong>
+                            <strong style="color: #b91c1c;">{{ product.current_stock }} {{ product.unit | default('units') }}</strong>
                             {% elif product.current_stock <= product.min_stock %}
-                            <strong style="color: #fbbf24;">{{ product.current_stock }} {{ product.unit | default('units') }}</strong>
+                            <strong style="color: #b45309;">{{ product.current_stock }} {{ product.unit | default('units') }}</strong>
                             {% else %}
-                            <strong style="color: #34d399;">{{ product.current_stock }} {{ product.unit | default('units') }}</strong>
+                            <strong style="color: #047857;">{{ product.current_stock }} {{ product.unit | default('units') }}</strong>
                             {% endif %}
                         </div>
                         <div style="display: flex; justify-content: space-between;">
@@ -110,18 +133,17 @@
                         </div>
                         <div style="display: flex; justify-content: space-between;">
                             <span style="color: var(--text-muted);">Unit Price:</span>
-                            <span style="color: #38bdf8; font-weight: 700;">${{ "%.2f" | format(product.unit_price) }}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between;">
-                            <span style="color: var(--text-muted);">Expiry Date:</span>
-                            <span style="color: var(--text-main);">{{ product.expiry_date }}</span>
+                            <span style="color: var(--primary-cyan); font-weight: 700;">${{ "%.2f" | format(product.unit_price) }}</span>
                         </div>
                     </div>
                 </div>
 
-                <div>
-                    <a href="{{ url_for('web.staff_product_details', product_id=product._id) }}" class="btn-action" style="width: 100%; text-align: center; justify-content: center; padding: 0.5rem; font-size: 0.85rem; background: var(--bg-hover, rgba(255,255,255,0.06)); border: 1px solid var(--border-color, rgba(255,255,255,0.12)); color: var(--text-main, #f8fafc); text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem;">
-                        <i class="fa-solid fa-eye"></i> View Details
+                <div style="display: flex; gap: 0.5rem;">
+                    <a href="?stock_id={{ product._id }}" class="btn-action" style="flex: 1; text-align: center; justify-content: center; padding: 0.5rem; font-size: 0.82rem; background: var(--primary-accent); border: 1px solid var(--primary-accent); color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem;">
+                        <i class="fa-solid fa-boxes-stacked"></i> Receive / Issue
+                    </a>
+                    <a href="{{ url_for('web.staff_product_details', product_id=product._id) }}" class="btn-action" style="text-align: center; justify-content: center; padding: 0.5rem 0.75rem; font-size: 0.82rem; background: var(--bg-surface-hover); border: 1px solid var(--border-color); color: var(--text-main); text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem;">
+                        <i class="fa-solid fa-eye"></i> Details
                     </a>
                 </div>
             </div>
@@ -129,6 +151,9 @@
         </div>
         {% endif %}
     </div>
+
+    <!-- Stock Operation Modal -->
+    {% include 'components/stock_modal.html' %}
 
 </div>
 {% endblock %}

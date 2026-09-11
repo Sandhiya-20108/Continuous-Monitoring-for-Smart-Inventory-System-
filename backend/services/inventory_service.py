@@ -23,6 +23,7 @@ class InventoryService:
         
         self.data_file_path = data_file_path
         self._in_memory_products = {}
+        self._alert_statuses = {}
         
         # MongoDB Connection & Repository Setup
         self.db_conn = MongoDBConnection(uri=uri)
@@ -32,7 +33,7 @@ class InventoryService:
         self._transactions = []
         self.initialize_data()
 
-    def record_transaction(self, product_id: str, product_name: str, op_type: str, qty_changed: int, old_stock: int, new_stock: int, user: str = "System", notes: str = "") -> dict:
+    def record_transaction(self, product_id: str, product_name: str, op_type: str, qty_changed: int, old_stock: int, new_stock: int, user: str = "System", role: str = "System", notes: str = "") -> dict:
         """Records an inventory transaction in MongoDB or fallback memory store."""
         tx_doc = {
             "id": f"tx-{len(self._transactions) + 1:04d}",
@@ -44,6 +45,7 @@ class InventoryService:
             "new_stock": new_stock,
             "timestamp": datetime.utcnow().isoformat(),
             "user": user or "System Administrator",
+            "role": role or "Staff",
             "notes": notes or ""
         }
         
@@ -92,33 +94,41 @@ class InventoryService:
 
         return self._transactions[:limit]
 
-    def update_stock_quantity(self, product_id: str, quantity: int, operation: str = "ADJUSTMENT", user: str = "Admin", notes: str = "") -> dict:
-        """Updates product stock quantity supporting Stock In, Stock Out, and Direct Adjustments with full audit validation."""
+    def update_stock_quantity(self, product_id: str, quantity: int, operation: str = "ADJUSTMENT", user: str = "Admin", role: str = "Admin", notes: str = "") -> dict:
+        """Updates product stock quantity supporting Stock In (Receive), Stock Out (Issue), and Direct Adjustments with full audit validation."""
         existing = self.get_product_by_id(product_id)
         if not existing:
-            return {"success": False, "message": "Product not found"}
+            return {"success": False, "message": f"Product not found with ID '{product_id}'"}
+
+        try:
+            qty = int(quantity)
+        except (ValueError, TypeError):
+            return {"success": False, "message": "Invalid quantity: Please enter a valid integer number."}
+
+        op = (operation or "ADJUSTMENT").upper().strip()
+
+        if op in ["STOCK_IN", "STOCK_OUT"] and qty <= 0:
+            return {"success": False, "message": f"Invalid quantity: Operation {op.replace('_', ' ')} requires a positive quantity greater than 0."}
 
         old_stock = int(existing.get("current_stock", 0))
-        op = (operation or "ADJUSTMENT").upper().strip()
-        qty = abs(int(quantity))
 
         if op == "STOCK_IN":
             qty_changed = qty
             new_stock = old_stock + qty
-            op_label = "Stock In"
+            op_label = "Stock Receive (Stock In)"
         elif op == "STOCK_OUT":
             if qty > old_stock:
                 return {
                     "success": False,
-                    "message": f"Stock Out failure: Quantity ({qty}) exceeds available stock level ({old_stock} units)."
+                    "message": f"Insufficient stock: Requested issue quantity ({qty}) exceeds available stock level ({old_stock} units)."
                 }
             qty_changed = -qty
             new_stock = old_stock - qty
-            op_label = "Stock Out"
+            op_label = "Stock Issue (Stock Out)"
         else:  # ADJUSTMENT / DIRECT SET
-            new_stock = max(0, int(quantity))
+            new_stock = max(0, qty)
             qty_changed = new_stock - old_stock
-            op_label = "Direct Adjustment"
+            op_label = "Direct Stock Adjustment"
 
         now_iso = datetime.utcnow().isoformat()
         update_dict = {
@@ -146,6 +156,7 @@ class InventoryService:
             old_stock=old_stock,
             new_stock=new_stock,
             user=user,
+            role=role,
             notes=notes or f"{op_label} applied ({qty_changed:+d} units)"
         )
 
@@ -155,6 +166,52 @@ class InventoryService:
             "message": f"Successfully performed {op_label}: New stock for {existing.get('name')} is {new_stock} units.",
             "data": updated_item
         }
+
+    def update_alert_status(self, alert_id: str, status: str, user: str = "System") -> dict:
+        """Updates status of a low-stock or expiry alert (New, Viewed, Resolved)."""
+        valid_statuses = ["New", "Viewed", "Resolved"]
+        status_clean = (status or "").strip().title()
+        if status_clean not in valid_statuses:
+            return {"success": False, "message": f"Invalid alert status. Allowed values: {', '.join(valid_statuses)}"}
+
+        now_iso = datetime.utcnow().isoformat()
+        status_doc = {
+            "alert_id": alert_id,
+            "status": status_clean,
+            "updated_by": user,
+            "updated_at": now_iso
+        }
+        self._alert_statuses[alert_id] = status_doc
+
+        if self.use_mongodb and self.db_conn and self.db_conn.is_connected():
+            try:
+                coll = self.db_conn.get_collection("alert_statuses")
+                if coll is not None:
+                    coll.update_one({"alert_id": alert_id}, {"$set": status_doc}, upsert=True)
+            except Exception as err:
+                logger.error(f"Error persisting alert status: {err}")
+
+        return {"success": True, "message": f"Alert status updated to '{status_clean}'", "data": status_doc}
+
+    def get_alert_status(self, alert_id: str) -> dict:
+        """Helper to get alert status from memory or DB."""
+        if alert_id in self._alert_statuses:
+            return self._alert_statuses[alert_id]
+
+        if self.use_mongodb and self.db_conn and self.db_conn.is_connected():
+            try:
+                coll = self.db_conn.get_collection("alert_statuses")
+                if coll is not None:
+                    doc = coll.find_one({"alert_id": alert_id})
+                    if doc:
+                        if "_id" in doc:
+                            del doc["_id"]
+                        self._alert_statuses[alert_id] = doc
+                        return doc
+            except Exception as err:
+                logger.error(f"Error fetching alert status from MongoDB: {err}")
+
+        return {"status": "New", "updated_by": "", "updated_at": ""}
 
     def initialize_data(self):
         """Initializes store. Seeds MongoDB if empty; populates fallback JSON store."""
@@ -266,6 +323,7 @@ class InventoryService:
         
         risk_info = risk_engine.calculate_inventory_risk_score(item)
         recommendation = risk_engine.generate_product_recommendation(item, risk_info)
+        reorder_info = risk_engine.calculate_reorder_recommendation(item, risk_info["level"])
 
         augmented = dict(item)
         augmented["risk_score"] = risk_info["score"]
@@ -276,6 +334,11 @@ class InventoryService:
         augmented["anomaly_info"] = risk_info["anomaly_info"]
         augmented["risk_breakdown"] = risk_info["breakdown"]
         augmented["recommendation"] = recommendation
+        augmented["reorder_info"] = reorder_info
+        augmented["stock_deficit"] = reorder_info["stock_deficit"]
+        augmented["recommended_reorder"] = reorder_info["recommended_reorder"]
+        augmented["recommended_action"] = reorder_info["recommended_action"]
+        augmented["requires_reorder"] = reorder_info["requires_reorder"]
         return augmented
 
     def get_dashboard_metrics(self) -> dict:
@@ -453,6 +516,12 @@ class InventoryService:
 
         if severity_filter and severity_filter.lower() != "all":
             alerts = [a for a in alerts if a["severity"].lower() == severity_filter.lower()]
+
+        for a in alerts:
+            st_info = self.get_alert_status(a["id"])
+            a["status"] = st_info.get("status", "New")
+            a["updated_by"] = st_info.get("updated_by", "")
+            a["updated_at"] = st_info.get("updated_at", "")
 
         severity_order = {"Critical": 0, "High Risk": 1, "Warning": 2, "Safe": 3}
         alerts.sort(key=lambda x: severity_order.get(x["severity"], 4))
