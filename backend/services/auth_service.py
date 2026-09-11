@@ -82,26 +82,37 @@ class AuthService:
         return self.repository.get_all_staff()
 
     def create_staff_user(self, email: str, username: str, password: str, full_name: str) -> dict:
-        """Creates a new Staff user account (Admin operation)."""
-        if not email or not username or not password:
-            return {"success": False, "message": "Email, Username, and Password are required"}
+        """Creates a new Staff user account with backend validation."""
+        email_clean = (email or "").strip().lower()
+        username_clean = (username or "").strip().lower() or email_clean.split("@")[0]
+        full_name_clean = (full_name or "").strip()
+        pwd = (password or "").strip()
 
-        if self.repository.find_by_email_or_username(email) or self.repository.find_by_email_or_username(username):
-            return {"success": False, "message": "User with this Email or Username already exists"}
+        if not full_name_clean:
+            return {"success": False, "message": "Full Name is required."}
+
+        if not email_clean or "@" not in email_clean or "." not in email_clean:
+            return {"success": False, "message": "Please enter a valid email address."}
+
+        if not pwd or len(pwd) < 6:
+            return {"success": False, "message": "Password must be at least 6 characters long."}
+
+        if self.repository.find_by_email_or_username(email_clean) or self.repository.find_by_email_or_username(username_clean):
+            return {"success": False, "message": "An account with this Email or Username already exists."}
 
         user_dict = {
             "_id": f"user-staff-{secrets.token_hex(4)}",
-            "email": email.strip().lower(),
-            "username": username.strip().lower(),
-            "password_hash": generate_password_hash(password),
+            "email": email_clean,
+            "username": username_clean,
+            "password_hash": generate_password_hash(pwd),
             "role": "staff",
-            "full_name": full_name.strip() if full_name else username,
+            "full_name": full_name_clean,
             "created_at": datetime.utcnow().isoformat()
         }
 
         if self.repository.create_user(user_dict):
-            return {"success": True, "message": "Staff account created successfully"}
-        return {"success": False, "message": "Failed to create staff account"}
+            return {"success": True, "message": "Staff account created successfully! Please sign in below."}
+        return {"success": False, "message": "Failed to create staff account due to a database error."}
 
     def delete_staff_user(self, user_id: str) -> dict:
         """Deletes a staff user account (Admin operation)."""

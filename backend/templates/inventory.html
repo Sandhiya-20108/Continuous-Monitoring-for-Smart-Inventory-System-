@@ -11,16 +11,19 @@
         </div>
 
         <div class="table-controls">
-            {% if session.get('user') and session['user'].get('role') == 'admin' %}
             <div style="display: flex; gap: 0.5rem;">
+                {% if session.get('user') and session['user'].get('role') == 'admin' %}
                 <a href="{{ url_for('web.inventory', add_product='true', category=selected_category, risk_level=selected_risk, search=search_query) }}" class="btn-header-action" style="background: var(--primary-accent); border-color: var(--primary-accent);">
                     <i class="fa-solid fa-plus"></i> Add Product
                 </a>
                 <a href="{{ url_for('web.users') }}" class="btn-header-action" style="background: rgba(59, 130, 246, 0.15); border-color: var(--border-highlight); color: var(--primary-cyan);">
                     <i class="fa-solid fa-users-gear"></i> Staff Accounts
                 </a>
+                {% endif %}
+                <a href="{{ url_for('web.export_report') }}" class="btn-header-action" title="Export Inventory CSV Report">
+                    <i class="fa-solid fa-file-export"></i> Export Report
+                </a>
             </div>
-            {% endif %}
 
             <form action="{{ url_for('web.inventory') }}" method="GET" style="display: flex; gap: 0.5rem; align-items: center;">
                 <input type="hidden" name="risk_level" value="{{ selected_risk }}">
@@ -107,16 +110,19 @@
                                 <a href="{{ url_for('web.inventory', view_id=p._id, category=selected_category, risk_level=selected_risk, search=search_query) }}" class="btn-act" title="View Details & Timeline">
                                     <i class="fa-solid fa-eye"></i> View
                                 </a>
-                                <a href="{{ url_for('web.inventory', stock_id=p._id, category=selected_category, risk_level=selected_risk, search=search_query) }}" class="btn-act" title="Update Stock Quantity">
+                                <a href="{{ url_for('web.inventory', stock_id=p._id, category=selected_category, risk_level=selected_risk, search=search_query) }}" class="btn-act" title="Stock In / Stock Out">
                                     <i class="fa-solid fa-boxes-stacked"></i> Stock
+                                </a>
+                                <a href="{{ url_for('web.inventory', history_id=p._id, category=selected_category, risk_level=selected_risk, search=search_query) }}" class="btn-act" title="View Transaction History">
+                                    <i class="fa-solid fa-clock-rotate-left"></i> History
                                 </a>
                                 {% if session.get('user') and session['user'].get('role') == 'admin' %}
                                 <a href="{{ url_for('web.inventory', edit_id=p._id, category=selected_category, risk_level=selected_risk, search=search_query) }}" class="btn-act" title="Edit Product">
-                                    <i class="fa-solid fa-pen"></i>
+                                    <i class="fa-solid fa-pen"></i> Edit
                                 </a>
-                                <form action="{{ url_for('web.delete_product', product_id=p._id) }}" method="POST" style="margin:0;">
+                                <form action="{{ url_for('web.delete_product', product_id=p._id) }}" method="POST" style="margin:0;" onsubmit="return confirm('Are you sure you want to delete product {{ p.name }} (SKU: {{ p.sku }})?');">
                                     <button type="submit" class="btn-act btn-act-danger" title="Delete Product">
-                                        <i class="fa-solid fa-trash"></i>
+                                        <i class="fa-solid fa-trash"></i> Delete
                                     </button>
                                 </form>
                                 {% endif %}

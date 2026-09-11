@@ -13,7 +13,7 @@ class TestServerSideWebRoutes(unittest.TestCase):
         response = self.client.get("/login")
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Continuous Monitoring for", response.data)
-        self.assertIn(b"Sign In to Dashboard", response.data)
+        self.assertIn(b"Admin Sign In", response.data)
 
     def test_successful_web_login_redirects_to_dashboard(self):
         response = self.client.post("/login", data={
@@ -152,7 +152,7 @@ class TestServerSideWebRoutes(unittest.TestCase):
         })
         logout_res = self.client.post("/logout", follow_redirects=True)
         self.assertEqual(logout_res.status_code, 200)
-        self.assertIn(b"Sign In to Dashboard", logout_res.data)
+        self.assertIn(b"Admin Sign In", logout_res.data)
 
     def test_simulate_tick_route(self):
         self.client.post("/login", data={"identifier": "admin@inventory.com", "password": "Admin@123456"})

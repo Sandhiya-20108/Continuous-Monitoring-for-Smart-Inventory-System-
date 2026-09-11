@@ -1,0 +1,77 @@
+{% if history_product %}
+<!-- INVENTORY TRANSACTION HISTORY MODAL -->
+<div class="modal-overlay active">
+    <div class="modal-card" style="max-width: 650px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+            <h3 style="font-size: 1.1rem; color: var(--text-main); font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-clock-rotate-left" style="color: #38bdf8;"></i> Inventory Transaction History
+            </h3>
+            <a href="{{ request.path }}" class="drawer-close" title="Close Modal">&times;</a>
+        </div>
+        
+        <div style="background: rgba(255,255,255,0.03); border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 1rem; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div style="font-weight: 700; font-size: 1rem; color: var(--text-main);">{{ history_product.name }}</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">SKU: <code>{{ history_product.sku }}</code> | Category: {{ history_product.category }}</div>
+            </div>
+            <div style="text-align: right;">
+                <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Current Stock</span>
+                <strong style="font-size: 1.1rem; color: #38bdf8;">{{ history_product.current_stock }} {{ history_product.unit | default('Units') }}</strong>
+            </div>
+        </div>
+
+        <div style="max-height: 320px; overflow-y: auto; margin-bottom: 1rem;">
+            {% if not history_records %}
+            <div style="text-align: center; padding: 2rem 1rem; color: var(--text-muted);">
+                <i class="fa-solid fa-receipt" style="font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5;"></i>
+                <p style="font-size: 0.85rem;">No past transactions recorded for this item yet.</p>
+            </div>
+            {% else %}
+            <table class="telemetry-table" style="width: 100%; font-size: 0.85rem;">
+                <thead>
+                    <tr>
+                        <th style="padding: 0.5rem; text-align: left;">Date & Time</th>
+                        <th style="padding: 0.5rem; text-align: left;">Type</th>
+                        <th style="padding: 0.5rem; text-align: right;">Change</th>
+                        <th style="padding: 0.5rem; text-align: right;">Result Stock</th>
+                        <th style="padding: 0.5rem; text-align: left;">User / Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in history_records %}
+                    <tr style="border-bottom: 1px solid var(--border-color);">
+                        <td style="padding: 0.55rem; color: var(--text-muted); font-size: 0.78rem;">
+                            {{ record.timestamp[:19].replace('T', ' ') }}
+                        </td>
+                        <td style="padding: 0.55rem;">
+                            {% if record.type == 'STOCK_IN' %}
+                            <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; font-size: 0.72rem; padding: 0.15rem 0.4rem;">📥 STOCK IN</span>
+                            {% elif record.type == 'STOCK_OUT' %}
+                            <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #f87171; font-size: 0.72rem; padding: 0.15rem 0.4rem;">📤 STOCK OUT</span>
+                            {% else %}
+                            <span class="badge" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; font-size: 0.72rem; padding: 0.15rem 0.4rem;">⚙️ ADJUST</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 0.55rem; text-align: right; font-weight: 700; color: {{ '#34d399' if record.quantity_changed > 0 else '#f87171' if record.quantity_changed < 0 else '#60a5fa' }};">
+                            {{ "%+d" | format(record.quantity_changed) }}
+                        </td>
+                        <td style="padding: 0.55rem; text-align: right; font-weight: 600; color: var(--text-main);">
+                            {{ record.new_stock }}
+                        </td>
+                        <td style="padding: 0.55rem; color: var(--text-muted); font-size: 0.78rem;">
+                            <strong>{{ record.user }}</strong>
+                            {% if record.notes %}<br><span style="font-style: italic;">"{{ record.notes }}"</span>{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        </div>
+
+        <div style="display: flex; justify-content: flex-end;">
+            <a href="{{ request.path }}" class="btn-action" style="padding: 0.5rem 1rem; background: var(--bg-hover); border: 1px solid var(--border-color); color: var(--text-main); text-decoration: none; border-radius: 6px;">Close History</a>
+        </div>
+    </div>
+</div>
+{% endif %}

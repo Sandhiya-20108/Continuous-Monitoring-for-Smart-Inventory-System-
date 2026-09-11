@@ -18,10 +18,22 @@
     {% if session.get('user') %}
     <!-- MAIN ENTERPRISE APPLICATION SHELL -->
     <div class="app-shell">
-        {% include 'components/sidebar.html' %}
+        {% if session.get('user', {}).get('role') == 'admin' %}
+            {% include 'components/sidebar.html' %}
+        {% elif session.get('user', {}).get('role') == 'customer' %}
+            {% include 'components/customer_sidebar.html' %}
+        {% else %}
+            {% include 'components/staff_sidebar.html' %}
+        {% endif %}
         
         <div class="main-content">
-            {% include 'components/header.html' %}
+            {% if session.get('user', {}).get('role') == 'admin' %}
+                {% include 'components/header.html' %}
+            {% elif session.get('user', {}).get('role') == 'customer' %}
+                {% include 'components/customer_header.html' %}
+            {% else %}
+                {% include 'components/staff_header.html' %}
+            {% endif %}
 
             <div class="page-view active">
                 {% block content %}{% endblock %}
@@ -31,8 +43,12 @@
 
     <!-- Modals & Drawers rendered server-side when target query params exist -->
     {% include 'components/product_drawer.html' %}
-    {% include 'components/product_modal.html' %}
-    {% include 'components/stock_modal.html' %}
+    {% if session.get('user', {}).get('role') == 'admin' %}
+        {% include 'components/product_modal.html' %}
+        {% include 'components/stock_modal.html' %}
+        {% include 'components/history_modal.html' %}
+    {% endif %}
+    {% include 'components/profile_modal.html' %}
 
     {% else %}
     <!-- LOGIN PAGE VIEW -->

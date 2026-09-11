@@ -3,14 +3,14 @@ from datetime import datetime
 class UserModel:
     """
     Data abstraction class representing a user document in MongoDB.
-    Roles supported: 'admin', 'staff'
+    Roles supported: 'admin', 'staff', 'customer'
     """
     def __init__(self, data: dict):
         self.id = str(data.get("_id")) if data.get("_id") is not None else None
         self.email = data.get("email", "").strip().lower()
         self.username = data.get("username", "").strip()
         self.password_hash = data.get("password_hash", "")
-        self.role = data.get("role", "staff").strip().lower()
+        self.role = data.get("role", "customer").strip().lower()
         self.full_name = data.get("full_name", "").strip()
         self.created_at = data.get("created_at", datetime.utcnow().isoformat())
 

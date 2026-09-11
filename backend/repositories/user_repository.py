@@ -27,6 +27,15 @@ DEFAULT_SEED_USERS = [
         "role": "staff",
         "full_name": "Inventory Staff Officer",
         "created_at": datetime.utcnow().isoformat()
+    },
+    {
+        "_id": "user-customer-001",
+        "email": "customer@inventory.com",
+        "username": "customer",
+        "password_hash": generate_password_hash("Customer@123456"),
+        "role": "customer",
+        "full_name": "Valued Customer",
+        "created_at": datetime.utcnow().isoformat()
     }
 ]
 

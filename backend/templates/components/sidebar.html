@@ -40,7 +40,7 @@
 
     <div class="sidebar-footer">
         <div class="user-profile-card">
-            <div style="display: flex; align-items: center; gap: 0.6rem; overflow: hidden;">
+            <a href="?show_profile=true" style="display: flex; align-items: center; gap: 0.6rem; overflow: hidden; text-decoration: none; color: inherit; flex: 1;" title="View & Edit Profile">
                 <div class="user-avatar">{{ session.get('user', {}).get('full_name', 'U')[0] | upper }}</div>
                 <div class="user-details">
                     <span class="user-name-text">{{ session.get('user', {}).get('full_name', session.get('user', {}).get('username', 'User')) }}</span>
@@ -48,12 +48,17 @@
                         {{ session.get('user', {}).get('role', 'staff') | upper }}
                     </span>
                 </div>
+            </a>
+            <div style="display: flex; gap: 0.3rem; align-items: center;">
+                <a href="?show_profile=true" class="btn-sidebar-logout" title="Profile Settings" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-user-gear"></i>
+                </a>
+                <form action="{{ url_for('web.logout') }}" method="POST" style="margin: 0;">
+                    <button type="submit" class="btn-sidebar-logout" title="Log Out">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </form>
             </div>
-            <form action="{{ url_for('web.logout') }}" method="POST" style="margin: 0;">
-                <button type="submit" class="btn-sidebar-logout" title="Log Out">
-                    <i class="fa-solid fa-right-from-bracket"></i>
-                </button>
-            </form>
         </div>
     </div>
 </aside>

@@ -29,7 +29,115 @@ class InventoryService:
         self.use_mongodb = self.db_conn.connect()
         self.repository = InventoryRepository(self.db_conn) if self.use_mongodb else None
 
+        self._transactions = []
         self.initialize_data()
+
+    def record_transaction(self, product_id: str, product_name: str, op_type: str, qty_changed: int, old_stock: int, new_stock: int, user: str = "System", notes: str = "") -> dict:
+        """Records an inventory transaction in MongoDB or fallback memory store."""
+        tx_doc = {
+            "id": f"tx-{len(self._transactions) + 1:04d}",
+            "product_id": product_id,
+            "product_name": product_name,
+            "type": op_type,  # STOCK_IN, STOCK_OUT, ADJUSTMENT
+            "quantity_changed": qty_changed,
+            "old_stock": old_stock,
+            "new_stock": new_stock,
+            "timestamp": datetime.utcnow().isoformat(),
+            "user": user or "System Administrator",
+            "notes": notes or ""
+        }
+        
+        if self.use_mongodb and self.db_conn and self.db_conn.is_connected():
+            try:
+                coll = self.db_conn.get_collection("inventory_transactions")
+                if coll is not None:
+                    coll.insert_one(dict(tx_doc))
+            except Exception as err:
+                logger.error(f"Error persisting transaction: {err}")
+
+        self._transactions.insert(0, tx_doc)
+        return tx_doc
+
+    def get_product_history(self, product_id: str) -> list:
+        """Retrieves transaction history for a specific product."""
+        if self.use_mongodb and self.db_conn and self.db_conn.is_connected():
+            try:
+                coll = self.db_conn.get_collection("inventory_transactions")
+                if coll is not None:
+                    docs = list(coll.find({"$or": [{"product_id": product_id}, {"product_name": product_id}]}).sort("timestamp", -1))
+                    for d in docs:
+                        if "_id" in d:
+                            d["_id"] = str(d["_id"])
+                    if docs:
+                        return docs
+            except Exception as err:
+                logger.error(f"Error fetching history from MongoDB: {err}")
+
+        return [t for t in self._transactions if t.get("product_id") == product_id or t.get("product_name") == product_id]
+
+    def update_stock_quantity(self, product_id: str, quantity: int, operation: str = "ADJUSTMENT", user: str = "Admin", notes: str = "") -> dict:
+        """Updates product stock quantity supporting Stock In, Stock Out, and Direct Adjustments with full audit validation."""
+        existing = self.get_product_by_id(product_id)
+        if not existing:
+            return {"success": False, "message": "Product not found"}
+
+        old_stock = int(existing.get("current_stock", 0))
+        op = (operation or "ADJUSTMENT").upper().strip()
+        qty = abs(int(quantity))
+
+        if op == "STOCK_IN":
+            qty_changed = qty
+            new_stock = old_stock + qty
+            op_label = "Stock In"
+        elif op == "STOCK_OUT":
+            if qty > old_stock:
+                return {
+                    "success": False,
+                    "message": f"Stock Out failure: Quantity ({qty}) exceeds available stock level ({old_stock} units)."
+                }
+            qty_changed = -qty
+            new_stock = old_stock - qty
+            op_label = "Stock Out"
+        else:  # ADJUSTMENT / DIRECT SET
+            new_stock = max(0, int(quantity))
+            qty_changed = new_stock - old_stock
+            op_label = "Direct Adjustment"
+
+        now_iso = datetime.utcnow().isoformat()
+        update_dict = {
+            "current_stock": new_stock,
+            "last_updated": now_iso
+        }
+
+        internal_id = existing["_id"]
+        if self.use_mongodb and self.repository and self.db_conn.is_connected():
+            self.repository.update_product(product_id, update_dict)
+
+        if internal_id in self._in_memory_products:
+            self._in_memory_products[internal_id]["current_stock"] = new_stock
+            self._in_memory_products[internal_id]["last_updated"] = now_iso
+        if product_id in self._in_memory_products:
+            self._in_memory_products[product_id]["current_stock"] = new_stock
+            self._in_memory_products[product_id]["last_updated"] = now_iso
+
+        # Record transaction log
+        self.record_transaction(
+            product_id=internal_id,
+            product_name=existing.get("name", "Product"),
+            op_type=op,
+            qty_changed=qty_changed,
+            old_stock=old_stock,
+            new_stock=new_stock,
+            user=user,
+            notes=notes or f"{op_label} applied ({qty_changed:+d} units)"
+        )
+
+        updated_item = self.get_product_by_id(product_id)
+        return {
+            "success": True,
+            "message": f"Successfully performed {op_label}: New stock for {existing.get('name')} is {new_stock} units.",
+            "data": updated_item
+        }
 
     def initialize_data(self):
         """Initializes store. Seeds MongoDB if empty; populates fallback JSON store."""
@@ -463,32 +571,5 @@ class InventoryService:
             del self._in_memory_products[product_id]
 
         return {"success": True, "message": "Product deleted successfully"}
-
-    def update_stock_quantity(self, product_id: str, new_stock: int) -> dict:
-        """Updates product stock quantity (Admin & Inventory Staff feature)."""
-        existing = self.get_product_by_id(product_id)
-        if not existing:
-            return {"success": False, "message": "Product not found"}
-
-        new_stock = max(0, int(new_stock))
-        now_iso = datetime.utcnow().isoformat()
-        update_dict = {
-            "current_stock": new_stock,
-            "last_updated": now_iso
-        }
-
-        internal_id = existing["_id"]
-        if self.use_mongodb and self.repository and self.db_conn.is_connected():
-            self.repository.update_product(product_id, update_dict)
-
-        if internal_id in self._in_memory_products:
-            self._in_memory_products[internal_id]["current_stock"] = new_stock
-            self._in_memory_products[internal_id]["last_updated"] = now_iso
-        if product_id in self._in_memory_products:
-            self._in_memory_products[product_id]["current_stock"] = new_stock
-            self._in_memory_products[product_id]["last_updated"] = now_iso
-
-        updated_item = self.get_product_by_id(product_id)
-        return {"success": True, "message": "Stock quantity updated successfully", "data": updated_item}
 
 

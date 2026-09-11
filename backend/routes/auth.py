@@ -35,8 +35,11 @@ def require_role(required_role):
             user = get_current_user()
             if not user:
                 return jsonify({"status": "error", "message": "Authentication required. Please log in."}), 401
-            if user.get("role") != required_role:
-                return jsonify({"status": "error", "message": f"Access denied. '{required_role.capitalize()}' role required."}), 403
+            
+            allowed_roles = [required_role] if isinstance(required_role, str) else list(required_role)
+            if user.get("role") not in allowed_roles:
+                role_str = ", ".join([r.capitalize() for r in allowed_roles])
+                return jsonify({"status": "error", "message": f"Access denied. Required role: {role_str}."}), 403
             return f(user, *args, **kwargs)
         return decorated
     return decorator

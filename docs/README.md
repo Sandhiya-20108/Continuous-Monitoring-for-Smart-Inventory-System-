@@ -1,126 +1,129 @@
-# Continuous Monitoring for Smart Inventory System
-## Inventory Risk Intelligence & Continuous Monitoring System (Phase 2 - MongoDB Atlas Integration)
+# SmartShelf Guardian: Continuous Monitoring & Predictive Inventory System
 
-The **Inventory Risk Intelligence & Continuous Monitoring System** is an advanced operational platform designed to analyze inventory telemetry continuously and identify stockout, expiry, and consumption risks before they impact business operations.
-
-In **Phase 2**, the backend is integrated with **MongoDB Atlas / PyMongo** for persistent document storage, automated unique indexing, safe data seeding, and real-time telemetry updates, while preserving 100% API schema compatibility and UI responsiveness.
+**SmartShelf Guardian** is an enterprise-grade inventory intelligence and telemetry monitoring platform. It continuously analyzes stock movement, predicts stockouts, detects imminent expiries, calculates transparent stock health scores, identifies unusual consumption anomalies, and enforces strict Role-Based Access Control (RBAC) across Admin and Customer portals.
 
 ---
 
-## 1. System Architecture
+## 1. User Roles & Permission Matrix
+
+The application provides two distinct operational portals enforcing strict backend and frontend access controls.
+
+| Feature / Portal Route | Admin Role (`admin`) | Staff Role (`staff`) | Customer Role (`customer`) |
+| :--- | :---: | :---: | :---: |
+| **Admin Portal** (`/dashboard`, `/inventory`, `/risk-monitor`, `/alerts`, `/analytics`, `/users`) | ✅ Full Access | ❌ Restricted (Auto-redirected) | ❌ Restricted (Auto-redirected) |
+| **Staff Portal** (`/staff/dashboard`, `/staff/profile`) | 🔄 Redirects Admin | ✅ Primary Access | ✅ Access |
+| **Add / Edit / Delete Products** (`/inventory/add`, `/inventory/edit/*`, `/inventory/delete/*`) | ✅ Full Access | ❌ Forbidden | ❌ Forbidden |
+| **Stock In & Stock Out Operations** (`/inventory/stock/*`) | ✅ Full Access | ❌ Forbidden | ❌ Forbidden |
+| **View Internal Telemetry & Costs** (Supplier, Unit Price Margin, Anomaly Scores) | ✅ Visible | ❌ Hidden | ❌ Hidden |
+| **Export Inventory CSV Report** (`/export-report`) | ✅ Available | ❌ Forbidden | ❌ Forbidden |
+| **Staff Account Administration** (`/users`, `/users/create`, `/users/delete/*`) | ✅ Full Access | ❌ Forbidden | ❌ Forbidden |
+| **View Catalog & Stock Availability** (Product Name, SKU, Price, Status) | ✅ Visible | ✅ Visible | ✅ Visible |
+
+### Default Credentials
+- 👑 **Admin**: `admin@inventory.com` / `Admin@123456`
+- 📦 **Staff**: `staff@inventory.com` / `Staff@123456`
+
+---
+
+## 2. System Architecture
 
 ```
-[ Frontend Dashboard ] (HTML5 / CSS3 / Vanilla JS)
-        │
-        ▼ (REST API / JSON)
-[ Flask REST API ] (backend/app.py & backend/routes/inventory.py)
-        │
-        ▼
-[ Inventory Service ] (backend/services/inventory_service.py)
-        │  ├── Risk Intelligence Engine (backend/utils/risk_engine.py)
-        │  └── Dual-Mode Fallback (JSON store if offline)
-        ▼
-[ MongoDB Repository ] (backend/repositories/inventory_repository.py)
-        │
-        ▼ (PyMongo Driver)
-[ MongoDB Atlas Database ] (smart_inventory.products)
+                               ┌───────────────────────────┐
+                               │     Client Web Browser    │
+                               └─────────────┬─────────────┘
+                                             │
+                       ┌─────────────────────┴─────────────────────┐
+                       ▼                                           ▼
+             [ Admin Portal ]                           [ Customer Portal ]
+      (/dashboard, /inventory, etc.)             (/customer/dashboard, /profile)
+                       │                                           │
+                       └─────────────────────┬─────────────────────┘
+                                             │ (HTML / Pure Server-Side Forms)
+                                             ▼
+                               ┌───────────────────────────┐
+                               │   Flask Server-Side Web   │
+                               │  (backend/routes/web.py)  │
+                               └─────────────┬─────────────┘
+                                             │
+                       ┌─────────────────────┴─────────────────────┐
+                       ▼                                           ▼
+            [ REST API Blueprint ]                       [ Auth & RBAC Service ]
+             (backend/routes/api)                          (Auth & Security)
+                       │                                           │
+                       └─────────────────────┬─────────────────────┘
+                                             │
+                                             ▼
+                               ┌───────────────────────────┐
+                               │     Inventory Service     │
+                               │(backend/services/inventory)│
+                               └─────────────┬─────────────┘
+                                             │  ├── Risk Engine (Predictive Analytics)
+                                             │  └── Transaction Audit Tracker
+                                             ▼
+                               ┌───────────────────────────┐
+                               │     MongoDB Repository    │
+                               │ (Dual-Mode Mongo/In-Mem)  │
+                               └───────────────────────────┘
 ```
 
 ---
 
-## 2. Environment Variables Configuration
+## 3. Key Operational Features
 
-Copy `.env.example` to `.env` in the project root:
+1. **Role-Based Access Control (RBAC)**:
+   - Automated post-login redirection based on role (`admin` -> Admin Portal, `customer`/`staff` -> Customer Portal).
+   - Direct URL access protection via `@admin_required` and `@customer_required` Flask decorators.
+2. **Customer Catalog Portal**:
+   - Clean, customer-facing interface showing available products, live availability status ("In Stock", "Low Stock", "Out of Stock"), unit pricing, search, category filters, and customer profile management.
+3. **Stock In & Stock Out Operations**:
+   - Explicit stock movement handling (`STOCK_IN`, `STOCK_OUT`, `ADJUSTMENT`) with audit log notes.
+   - Validation against negative stock or stock-out exceeding current available units.
+4. **Inventory Transaction Audit History**:
+   - Every stock movement is logged with timestamp, operator name, quantity change (+/-), resulting stock level, and optional reason notes.
+5. **Smart Risk & Telemetry Engine**:
+   - **Predictive Stock Duration**: Estimated days to stockout (`Current Stock / Average Daily Usage`).
+   - **Expiry Monitoring**: Proximity alerts ("Safe", "Approaching Expiry", "Critical Expiry", "Expired").
+   - **Stock Health Score**: Transparent 0–100 rule-based score factoring depletion, expiry, and demand anomalies.
+   - **Unusual Stock Movement**: High consumption surge (>2.5x) or zero-movement warnings flagged for Admin review.
+6. **Export & Reporting**:
+   - Download complete inventory telemetry as CSV (`/export-report`).
 
+---
+
+## 4. DevOps Setup & CI/CD Pipeline
+
+### Docker Containerization
+- **Dockerfile**: Containerizes the Flask application with Python 3.10-slim and automated healthcheck.
+- **docker-compose.yml**: Orchestrates Flask web server (`web`) and MongoDB database container (`mongo`).
+
+To launch with Docker Compose:
 ```bash
-cp .env.example .env
+docker-compose up --build -d
 ```
 
-Set your MongoDB Atlas connection details inside `.env`:
-
-```env
-# Server Settings
-PORT=5000
-FLASK_DEBUG=True
-SECRET_KEY=smart-inventory-risk-secret-key-2026
-
-# MongoDB Atlas Settings
-MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.example.mongodb.net/?retryWrites=true&w=majority
-MONGODB_DATABASE=smart_inventory
-MONGODB_COLLECTION=products
-MONGODB_TIMEOUT_MS=3000
-```
-
-> [!IMPORTANT]
-> Never commit `.env` to version control. The `.env` file is listed in `.gitignore`.
+### GitHub Actions CI
+- Workflow file `.github/workflows/ci.yml` automatically triggers on push/PR to `main` or `master`.
+- Executes automated `unittest` / `pytest` suite and verifies Docker container builds.
 
 ---
 
-## 3. MongoDB Atlas Setup & Seeding
+## 5. Clean Coding & Server-Side Rules
 
-### Step 1: Create a Cluster on MongoDB Atlas
-1. Create a free cluster on [MongoDB Atlas](https://www.mongodb.com/cloud/atlas).
-2. Create a Database User under **Database Access**.
-3. Add your IP address under **Network Access** (or `0.0.0.0/0` for development access).
-4. Get your connection string (`mongodb+srv://...`) under **Database -> Connect -> Drivers**.
-
-### Step 2: Configure Local `.env`
-Paste your connection string into `MONGODB_URI` in `.env`.
-
-### Step 3: Automated Indexing & Seeding
-When the Flask backend starts:
-- It automatically verifies connection to MongoDB Atlas.
-- It creates a **unique index** on `sku` and an index on `category`.
-- If the target collection is empty, it automatically seeds all 12 sample inventory items.
-- Duplicate insertion is prevented using SKU unique constraints.
+- **Zero JavaScript Requirement**: Built with 100% pure server-side Flask Jinja2 rendering, query-parameter views, and HTML forms. No script tags, `onclick` handlers, or JS modal logic.
+- **Single Responsibility Principle**: Distinct separation between data models, repositories, business logic services, risk calculators, and route handlers.
+- **Comprehensive Validation**: Input parameters sanitized and checked against invalid values or negative quantities.
 
 ---
 
-## 4. REST API Specification & Health Verification
+## 6. Running tests & Local Server
 
-### Check Server & Database Health: `GET /api/health`
-
-**Sample Response (MongoDB Connected):**
-```json
-{
-  "status": "online",
-  "service": "Inventory Risk Intelligence API",
-  "version": "2.0.0-phase2-mongodb",
-  "mongodb": {
-    "status": "connected",
-    "database": "smart_inventory",
-    "collection": "products",
-    "details": "MongoDB Atlas connection active and responsive."
-  }
-}
-```
-
-### Complete Endpoints List
-
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/api/health` | Health check reporting API and MongoDB Atlas status |
-| `GET` | `/api/products` | Query inventory items with calculated risk scores (`?category=&risk_level=&search=`) |
-| `GET` | `/api/products/<id>` | Detailed view for a single product |
-| `GET` | `/api/metrics` | System KPI metrics & Overall Inventory Health Score |
-| `GET` | `/api/assistant` | Smart Inventory Assistant summary & priorities |
-| `GET` | `/api/alerts` | Active risk alerts (`?severity=`) |
-| `POST` | `/api/simulate-tick` | Triggers live stock consumption tick & persists to MongoDB |
-| `POST` | `/api/simulate-what-if` | Computes what-if demand variance scenario |
-
----
-
-## 5. Running the Application & Unit Tests
-
-### A. Run Unit Test Suite
+### Run Automated Unit Test Suite
 ```bash
-backend\venv\Scripts\python.exe -m unittest discover -s tests
+backend\venv\Scripts\python.exe -m unittest discover tests
 ```
 
-### B. Run Backend API Server
+### Run Server Locally
 ```bash
 backend\venv\Scripts\python.exe backend/app.py
 ```
-
-### C. Open Frontend Dashboard
-Open `frontend/index.html` in your web browser.
+Application will be accessible on `http://localhost:5000`.
