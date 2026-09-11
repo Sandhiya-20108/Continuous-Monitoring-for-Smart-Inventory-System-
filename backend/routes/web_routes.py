@@ -219,25 +219,89 @@ def dashboard():
 def staff_dashboard():
     if session.get("user", {}).get("role") == "admin":
         return redirect(url_for("web.dashboard"))
-    category = request.args.get("category", "all")
-    search = request.args.get("search", "")
+    
+    products = inventory_service.get_all_products()
+    total_products = len(products)
+    out_of_stock_count = sum(1 for p in products if p.get("current_stock", 0) <= 0)
+    low_stock_count = sum(1 for p in products if 0 < p.get("current_stock", 0) <= p.get("min_stock", 10))
+    in_stock_count = max(0, total_products - out_of_stock_count - low_stock_count)
 
-    products = inventory_service.get_all_products(category=category, search=search)
-
-    view_id = request.args.get("view_id")
-    drawer_product = inventory_service.get_product_by_id(view_id) if view_id else None
+    recent_transactions = inventory_service.get_recent_transactions(limit=6)
+    alerts = inventory_service.get_alerts()
     greeting = get_time_based_greeting()
 
     return render_template(
         "staff_dashboard.html",
         current_view="staff_dashboard",
-        page_title="Product Catalog",
-        page_breadcrumb="Staff Workspace",
-        products=products,
-        selected_category=category,
-        search_query=search,
-        drawer_product=drawer_product,
+        page_title="Staff Workspace",
+        page_breadcrumb="Dashboard Overview",
+        total_products=total_products,
+        in_stock_count=in_stock_count,
+        low_stock_count=low_stock_count,
+        out_of_stock_count=out_of_stock_count,
+        recent_transactions=recent_transactions,
+        alerts=alerts[:5],
         greeting=greeting
+    )
+
+@web_bp.route("/staff/products", methods=["GET"])
+@login_required
+def staff_products():
+    if session.get("user", {}).get("role") == "admin":
+        return redirect(url_for("web.dashboard"))
+    
+    category = request.args.get("category", "all")
+    products = inventory_service.get_all_products(category=category)
+
+    return render_template(
+        "staff_products.html",
+        current_view="staff_products",
+        page_title="Browse Product Catalog",
+        page_breadcrumb="Browse Products",
+        products=products,
+        selected_category=category
+    )
+
+@web_bp.route("/staff/products/search", methods=["GET"])
+@login_required
+def staff_product_search():
+    if session.get("user", {}).get("role") == "admin":
+        return redirect(url_for("web.dashboard"))
+    
+    search_query = request.args.get("search", "").strip()
+    products = []
+    has_searched = False
+
+    if search_query:
+        has_searched = True
+        products = inventory_service.get_all_products(search=search_query)
+
+    return render_template(
+        "staff_product_search.html",
+        current_view="staff_product_search",
+        page_title="Search Product Catalog",
+        page_breadcrumb="Search Products",
+        products=products,
+        search_query=search_query,
+        has_searched=has_searched
+    )
+
+@web_bp.route("/staff/products/<product_id>", methods=["GET"])
+@login_required
+def staff_product_details(product_id):
+    if session.get("user", {}).get("role") == "admin":
+        return redirect(url_for("web.dashboard"))
+    
+    product = inventory_service.get_product_by_id(product_id)
+    history_records = inventory_service.get_product_history(product_id) if product else []
+
+    return render_template(
+        "staff_product_details.html",
+        current_view="staff_product_details",
+        page_title="Product Specifications",
+        page_breadcrumb="Product Details",
+        product=product,
+        history_records=history_records
     )
 
 @web_bp.route("/staff/profile", methods=["GET"])

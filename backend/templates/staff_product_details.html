@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+
+{% block title %}
+{% if product %}
+{{ product.name }} | Staff Product Details
+{% else %}
+Product Not Found | Staff Portal
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+
+    <!-- Header / Navigation Bar -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <div>
+            <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-main, #f8fafc); margin-bottom: 0.25rem;">
+                {% if product %}{{ product.name }}{% else %}Product Details{% endif %}
+            </h2>
+            <p style="color: var(--text-muted, #94a3b8); font-size: 0.9rem; margin: 0;">
+                {% if product %}Detailed specifications and stock telemetry information.{% else %}Requested inventory item could not be retrieved.{% endif %}
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+            <a href="{{ url_for('web.staff_products') }}" class="btn-action" style="padding: 0.5rem 1rem; background: var(--bg-hover); border: 1px solid var(--border-color); color: var(--text-main); text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem;">
+                <i class="fa-solid fa-store"></i> Back to Browse
+            </a>
+            <a href="{{ url_for('web.staff_product_search') }}" class="btn-action" style="padding: 0.5rem 1rem; background: var(--bg-hover); border: 1px solid var(--border-color); color: var(--text-main); text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem;">
+                <i class="fa-solid fa-magnifying-glass"></i> Search Products
+            </a>
+        </div>
+    </div>
+
+    {% if not product %}
+    <!-- Empty State: Product Not Found -->
+    <div class="panel" style="text-align: center; padding: 4rem 1.5rem;">
+        <i class="fa-solid fa-triangle-exclamation" style="font-size: 3.5rem; color: #f87171; margin-bottom: 1.25rem; opacity: 0.8;"></i>
+        <h3 style="font-size: 1.35rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem;">Product Not Found</h3>
+        <p style="font-size: 0.95rem; color: var(--text-muted); max-width: 520px; margin: 0 auto 1.5rem auto;">
+            The requested product ID does not match any item in the inventory database, or the item may have been removed.
+        </p>
+        <a href="{{ url_for('web.staff_products') }}" class="btn-action" style="padding: 0.6rem 1.5rem; background: var(--accent-color, #2563eb); color: #fff; text-decoration: none; border-radius: 6px; font-weight: 700; display: inline-flex; align-items: center; gap: 0.5rem;">
+            <i class="fa-solid fa-arrow-left"></i> Return to Product Catalog
+        </a>
+    </div>
+
+    {% else %}
+    <!-- Detailed Product View Grid -->
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+        
+        <!-- Left Panel: Complete Specifications -->
+        <div class="panel" style="padding: 1.75rem;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));">
+                <div>
+                    <span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); font-size: 0.78rem; padding: 0.25rem 0.6rem; border-radius: 4px; margin-bottom: 0.5rem; display: inline-block;">
+                        {{ product.category }}
+                    </span>
+                    <h3 style="font-size: 1.4rem; font-weight: 800; color: var(--text-main); margin: 0 0 0.25rem 0;">
+                        {{ product.name }}
+                    </h3>
+                    <div style="font-size: 0.85rem; color: var(--text-muted);">
+                        SKU: <code>{{ product.sku }}</code> &bull; Internal ID: <code>{{ product._id }}</code>
+                    </div>
+                </div>
+
+                {% if product.current_stock <= 0 %}
+                <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); font-size: 0.85rem; padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 700;">
+                    OUT OF STOCK
+                </span>
+                {% elif product.current_stock <= product.min_stock %}
+                <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 0.85rem; padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 700;">
+                    LOW STOCK
+                </span>
+                {% else %}
+                <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); font-size: 0.85rem; padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 700;">
+                    IN STOCK
+                </span>
+                {% endif %}
+            </div>
+
+            <!-- Key Metric Grid -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; background: rgba(255,255,255,0.02); padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border-color, rgba(255,255,255,0.06));">
+                <div>
+                    <span style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Available Quantity</span>
+                    {% if product.current_stock <= 0 %}
+                    <span style="font-size: 1.3rem; font-weight: 800; color: #f87171;">
+                    {% elif product.current_stock <= product.min_stock %}
+                    <span style="font-size: 1.3rem; font-weight: 800; color: #fbbf24;">
+                    {% else %}
+                    <span style="font-size: 1.3rem; font-weight: 800; color: #34d399;">
+                    {% endif %}
+                        {{ product.current_stock }} <span style="font-size: 0.85rem; font-weight: 500;">{{ product.unit | default('units') }}</span>
+                    </span>
+                </div>
+
+                <div>
+                    <span style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Minimum Stock Level</span>
+                    <span style="font-size: 1.3rem; font-weight: 800; color: var(--text-main);">
+                        {{ product.min_stock }} <span style="font-size: 0.85rem; font-weight: 500;">{{ product.unit | default('units') }}</span>
+                    </span>
+                </div>
+
+                <div>
+                    <span style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Unit Price</span>
+                    <span style="font-size: 1.3rem; font-weight: 800; color: #38bdf8;">
+                        ${{ "%.2f" | format(product.unit_price) }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Technical Specification Table -->
+            <h4 style="font-size: 1rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.85rem;">
+                Technical Details & Usage Metrics
+            </h4>
+            <div style="font-size: 0.88rem; color: var(--text-main);">
+                <div style="display: flex; justify-content: space-between; padding: 0.65rem 0; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.06));">
+                    <span style="color: var(--text-muted);">Category:</span>
+                    <strong>{{ product.category }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 0.65rem 0; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.06));">
+                    <span style="color: var(--text-muted);">Average Daily Usage:</span>
+                    <strong>{{ product.average_daily_usage }} {{ product.unit | default('units') }}/day</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 0.65rem 0; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.06));">
+                    <span style="color: var(--text-muted);">Batch Expiry Date:</span>
+                    <strong>{{ product.expiry_date }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 0.65rem 0; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.06));">
+                    <span style="color: var(--text-muted);">Estimated Days to Stockout:</span>
+                    <strong>{{ product.days_to_stockout | default('N/A') }} days</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 0.65rem 0;">
+                    <span style="color: var(--text-muted);">Last Database Update:</span>
+                    <strong>{{ product.last_updated | default('Recent') }}</strong>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Panel: Telemetry Status & History Log -->
+        <div>
+            <!-- Status Card -->
+            <div class="panel" style="padding: 1.25rem; margin-bottom: 1.25rem;">
+                <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem;">
+                    <i class="fa-solid fa-chart-line" style="color: #60a5fa;"></i> Telemetry Assessment
+                </h4>
+
+                <div style="background: rgba(255,255,255,0.03); padding: 0.85rem; border-radius: 6px; border: 1px solid var(--border-color); font-size: 0.82rem; margin-bottom: 0.75rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+                        <span style="color: var(--text-muted);">Stock Status:</span>
+                        {% if product.current_stock <= 0 %}
+                        <strong style="color: #f87171;">Critical Depletion</strong>
+                        {% elif product.current_stock <= product.min_stock %}
+                        <strong style="color: #fbbf24;">Below Safety Margin</strong>
+                        {% else %}
+                        <strong style="color: #34d399;">Optimal Stock</strong>
+                        {% endif %}
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--text-muted);">Expiry Proximity:</span>
+                        <strong>{{ product.expiry_info.status | default('Safe') }}</strong>
+                    </div>
+                </div>
+
+                {% if product.recommendation %}
+                <div style="font-size: 0.8rem; color: #94a3b8; line-height: 1.35; padding: 0.65rem; background: rgba(59, 130, 246, 0.08); border-left: 3px solid #3b82f6; border-radius: 4px;">
+                    <strong>Operational Insight:</strong> {{ product.recommendation.action }}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Product Movement History -->
+            <div class="panel" style="padding: 1.25rem;">
+                <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem;">
+                    <i class="fa-solid fa-clock-rotate-left" style="color: #34d399;"></i> Movement Audit
+                </h4>
+
+                {% if not history_records %}
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0; text-align: center; padding: 1rem 0;">
+                    No recent transaction logs for this item.
+                </p>
+                {% else %}
+                <div style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 260px; overflow-y: auto;">
+                    {% for rec in history_records[:5] %}
+                    <div style="font-size: 0.78rem; padding: 0.5rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong style="color: var(--text-main);">{{ rec.type | default('STOCK') }}</strong>
+                            <div style="color: var(--text-muted); font-size: 0.72rem;">{{ rec.user | default('System') }}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            {% if rec.quantity_changed > 0 %}
+                            <span style="font-weight: 700; color: #34d399;">{{ "%+d" | format(rec.quantity_changed) }}</span>
+                            {% else %}
+                            <span style="font-weight: 700; color: #f87171;">{{ "%+d" | format(rec.quantity_changed) }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
+
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

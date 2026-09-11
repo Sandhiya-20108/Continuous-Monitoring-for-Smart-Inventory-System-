@@ -6,7 +6,7 @@
     </div>
 
     <div class="header-right">
-        <form action="{{ url_for('web.staff_dashboard') }}" method="GET" class="global-search">
+        <form action="{{ url_for('web.staff_product_search') }}" method="GET" class="global-search">
             <i class="fa-solid fa-magnifying-glass"></i>
             <input type="text" name="search" value="{{ search_query | default('') }}" placeholder="Search products or SKU...">
         </form>

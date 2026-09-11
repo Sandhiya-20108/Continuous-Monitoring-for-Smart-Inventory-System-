@@ -75,6 +75,23 @@ class InventoryService:
 
         return [t for t in self._transactions if t.get("product_id") == product_id or t.get("product_name") == product_id]
 
+    def get_recent_transactions(self, limit: int = 10) -> list:
+        """Retrieves overall recent transaction history across all products."""
+        if self.use_mongodb and self.db_conn and self.db_conn.is_connected():
+            try:
+                coll = self.db_conn.get_collection("inventory_transactions")
+                if coll is not None:
+                    docs = list(coll.find().sort("timestamp", -1).limit(limit))
+                    for d in docs:
+                        if "_id" in d:
+                            d["_id"] = str(d["_id"])
+                    if docs:
+                        return docs
+            except Exception as err:
+                logger.error(f"Error fetching recent transactions from MongoDB: {err}")
+
+        return self._transactions[:limit]
+
     def update_stock_quantity(self, product_id: str, quantity: int, operation: str = "ADJUSTMENT", user: str = "Admin", notes: str = "") -> dict:
         """Updates product stock quantity supporting Stock In, Stock Out, and Direct Adjustments with full audit validation."""
         existing = self.get_product_by_id(product_id)
@@ -197,16 +214,26 @@ class InventoryService:
             augmented["requires_reorder"] = reorder_info["requires_reorder"]
 
             # Filtering
-            if category and category.lower() != "all" and item.get("category", "").lower() != category.lower():
-                continue
+            if category and category.lower() != "all":
+                c_low = category.lower()
+                item_cat = item.get("category", "").lower()
+                if c_low == "healthcare" and "medical" in item_cat:
+                    pass
+                elif c_low != item_cat:
+                    continue
+
             if risk_level and risk_level.lower() != "all" and risk_info["level"].lower() != risk_level.lower():
                 continue
+
             if search:
                 query = search.lower()
+                id_match = query in str(item.get("_id", "")).lower()
                 name_match = query in item.get("name", "").lower()
                 sku_match = query in item.get("sku", "").lower()
                 cat_match = query in item.get("category", "").lower()
-                if not (name_match or sku_match or cat_match):
+                sup_match = query in item.get("supplier", "").lower()
+                health_match = (query == "healthcare" and "medical" in item.get("category", "").lower())
+                if not (id_match or name_match or sku_match or cat_match or sup_match or health_match):
                     continue
 
             results.append(augmented)

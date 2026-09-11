@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block title %}Staff Portal | Search Products{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+
+    <!-- Header & Breadcrumb Info -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <div>
+            <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-main, #f8fafc); margin-bottom: 0.25rem;">
+                Search Product Catalog
+            </h2>
+            <p style="color: var(--text-muted, #94a3b8); font-size: 0.9rem; margin: 0;">
+                Search products by name, category, SKU code, or product ID.
+            </p>
+        </div>
+        <a href="{{ url_for('web.staff_products') }}" class="btn-action" style="padding: 0.5rem 1rem; background: var(--bg-hover); border: 1px solid var(--border-color); color: var(--text-main); text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem;">
+            <i class="fa-solid fa-store"></i> Browse Catalog
+        </a>
+    </div>
+
+    <!-- Search Control Panel -->
+    <div class="panel" style="margin-bottom: 1.5rem; padding: 1.5rem;">
+        <form action="{{ url_for('web.staff_product_search') }}" method="GET" style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            <div class="input-wrapper" style="flex: 1; min-width: 280px;">
+                <i class="fa-solid fa-magnifying-glass input-icon"></i>
+                <input type="text" name="search" class="form-control" placeholder="Type product name, SKU, category, or product ID..." value="{{ search_query | default('') }}" style="padding-left: 2.3rem; height: 42px; font-size: 0.9rem;">
+            </div>
+            <button type="submit" class="btn-action" style="height: 42px; padding: 0 1.25rem; font-size: 0.9rem; border-radius: 6px; background: var(--accent-color, #2563eb); color: #fff; border: none; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem;">
+                <i class="fa-solid fa-magnifying-glass"></i> Search Products
+            </button>
+            {% if search_query %}
+            <a href="{{ url_for('web.staff_product_search') }}" class="btn-action" style="height: 42px; padding: 0 1rem; font-size: 0.85rem; border-radius: 6px; background: var(--bg-hover); color: var(--text-muted); border: 1px solid var(--border-color); display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none;" title="Clear Search">
+                <i class="fa-solid fa-xmark"></i> Clear Search
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Search Results Display Area -->
+    <div class="panel" style="padding: 1.25rem;">
+        {% if not has_searched %}
+        <!-- Initial State before search query -->
+        <div style="text-align: center; padding: 3.5rem 1rem; color: var(--text-muted);">
+            <i class="fa-solid fa-magnifying-glass-location" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; color: #60a5fa;"></i>
+            <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem;">Enter a search query above</h4>
+            <p style="font-size: 0.9rem; max-width: 500px; margin: 0 auto 1.5rem auto;">
+                Search inventory records by typing product keywords, SKU numbers (e.g. <code>MED-GLV-100</code>), or categories.
+            </p>
+            <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+                <a href="{{ url_for('web.staff_product_search', search='Healthcare') }}" class="btn-filter">Healthcare</a>
+                <a href="{{ url_for('web.staff_product_search', search='Electronics') }}" class="btn-filter">Electronics</a>
+                <a href="{{ url_for('web.staff_product_search', search='Safety') }}" class="btn-filter">Safety</a>
+                <a href="{{ url_for('web.staff_product_search', search='Gloves') }}" class="btn-filter">Gloves</a>
+            </div>
+        </div>
+
+        {% elif not products %}
+        <!-- Empty Search Result State -->
+        <div style="text-align: center; padding: 3.5rem 1rem; color: var(--text-muted);">
+            <i class="fa-solid fa-file-circle-xmark" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; color: #f87171;"></i>
+            <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem;">No matching products found</h4>
+            <p style="font-size: 0.9rem; max-width: 480px; margin: 0 auto 1.25rem auto;">
+                No catalog items matched your search query "<strong>{{ search_query }}</strong>". Please check for typos or try broader keywords.
+            </p>
+            <a href="{{ url_for('web.staff_product_search') }}" class="btn-action" style="display: inline-block; padding: 0.5rem 1.25rem; background: var(--accent-color, #2563eb); color: #fff; text-decoration: none; border-radius: 6px; font-weight: 600;">
+                Clear Search & Try Again
+            </a>
+        </div>
+
+        {% else %}
+        <!-- Matching Products List/Grid -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin: 0; color: var(--text-main);">
+                Matching Search Results for "{{ search_query }}"
+            </h3>
+            <span style="font-size: 0.85rem; color: var(--text-muted);">Found {{ products | length }} result(s)</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1.25rem;">
+            {% for product in products %}
+            <div class="product-card" style="background: var(--card-bg, rgba(30, 41, 59, 0.4)); border: 1px solid var(--border-color, rgba(255,255,255,0.08)); border-radius: 10px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+                        <span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px;">
+                            {{ product.category }}
+                        </span>
+                        
+                        {% if product.current_stock <= 0 %}
+                        <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px;">
+                            Out of Stock
+                        </span>
+                        {% elif product.current_stock <= product.min_stock %}
+                        <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px;">
+                            Low Stock
+                        </span>
+                        {% else %}
+                        <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px;">
+                            In Stock
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <h4 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.35rem; color: var(--text-main, #f8fafc);">
+                        {{ product.name }}
+                    </h4>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.85rem;">
+                        SKU: <code>{{ product.sku }}</code> | ID: <code>{{ product._id }}</code>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem; padding: 0.65rem 0; border-top: 1px dashed var(--border-color, rgba(255,255,255,0.08)); border-bottom: 1px dashed var(--border-color, rgba(255,255,255,0.08)); margin-bottom: 1rem; font-size: 0.82rem;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-muted);">Available Quantity:</span>
+                            {% if product.current_stock <= 0 %}
+                            <strong style="color: #f87171;">{{ product.current_stock }} {{ product.unit | default('units') }}</strong>
+                            {% elif product.current_stock <= product.min_stock %}
+                            <strong style="color: #fbbf24;">{{ product.current_stock }} {{ product.unit | default('units') }}</strong>
+                            {% else %}
+                            <strong style="color: #34d399;">{{ product.current_stock }} {{ product.unit | default('units') }}</strong>
+                            {% endif %}
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-muted);">Unit Price:</span>
+                            <span style="color: #38bdf8; font-weight: 700;">${{ "%.2f" | format(product.unit_price) }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <a href="{{ url_for('web.staff_product_details', product_id=product._id) }}" class="btn-action" style="width: 100%; text-align: center; justify-content: center; padding: 0.5rem; font-size: 0.85rem; background: var(--bg-hover, rgba(255,255,255,0.06)); border: 1px solid var(--border-color, rgba(255,255,255,0.12)); color: var(--text-main, #f8fafc); text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem;">
+                        <i class="fa-solid fa-eye"></i> View Details
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

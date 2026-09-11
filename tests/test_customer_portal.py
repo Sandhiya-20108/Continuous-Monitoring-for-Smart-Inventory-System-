@@ -114,5 +114,35 @@ class TestCustomerPortalAndRBAC(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertIn(b"Access denied: Staff accounts cannot log in through the Admin Portal", res.data)
 
+    def test_staff_browse_products_page(self):
+        self.client.get("/demo/staff-login", follow_redirects=True)
+        res = self.client.get("/staff/products")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn(b"Browse Product Catalog", res.data)
+        self.assertIn(b"Available Inventory Items", res.data)
+
+    def test_staff_search_products_page(self):
+        self.client.get("/demo/staff-login", follow_redirects=True)
+        res_empty = self.client.get("/staff/products/search")
+        self.assertEqual(res_empty.status_code, 200)
+        self.assertIn(b"Search Product Catalog", res_empty.data)
+
+        res_search = self.client.get("/staff/products/search?search=Healthcare")
+        self.assertEqual(res_search.status_code, 200)
+        self.assertIn(b"Matching Search Results", res_search.data)
+
+    def test_staff_product_details_page(self):
+        self.client.get("/demo/staff-login", follow_redirects=True)
+        
+        # Test invalid product ID
+        res_invalid = self.client.get("/staff/products/non_existent_id_999")
+        self.assertEqual(res_invalid.status_code, 200)
+        self.assertIn(b"Product Not Found", res_invalid.data)
+
+        # Test valid product ID (seeded SKU-MED-001 or prod-001)
+        res_valid = self.client.get("/staff/products/prod-001")
+        self.assertEqual(res_valid.status_code, 200)
+        self.assertIn(b"Technical Details", res_valid.data)
+
 if __name__ == "__main__":
     unittest.main()
