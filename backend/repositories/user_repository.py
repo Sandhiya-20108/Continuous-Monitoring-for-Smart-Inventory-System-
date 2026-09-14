@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pymongo import ASCENDING
 from pymongo.errors import PyMongoError
 from werkzeug.security import generate_password_hash
@@ -17,7 +17,8 @@ DEFAULT_SEED_USERS = [
         "password_hash": generate_password_hash("Admin@123456"),
         "role": "admin",
         "full_name": "System Administrator",
-        "created_at": datetime.utcnow().isoformat()
+        "allow_profile_edit": True,
+        "created_at": datetime.now(timezone.utc).isoformat()
     },
     {
         "_id": "user-staff-001",
@@ -26,7 +27,8 @@ DEFAULT_SEED_USERS = [
         "password_hash": generate_password_hash("Staff@123456"),
         "role": "staff",
         "full_name": "Inventory Staff Officer",
-        "created_at": datetime.utcnow().isoformat()
+        "allow_profile_edit": True,
+        "created_at": datetime.now(timezone.utc).isoformat()
     },
     {
         "_id": "user-customer-001",
@@ -35,7 +37,8 @@ DEFAULT_SEED_USERS = [
         "password_hash": generate_password_hash("Customer@123456"),
         "role": "customer",
         "full_name": "Valued Customer",
-        "created_at": datetime.utcnow().isoformat()
+        "allow_profile_edit": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
     }
 ]
 
@@ -164,6 +167,22 @@ class UserRepository:
 
         self._in_memory_users[email] = dict(user_dict)
         return True
+
+    def update_user(self, user_id: str, updates: dict) -> bool:
+        coll = self._get_collection()
+        if coll is not None:
+            try:
+                coll.update_one({"$or": [{"_id": user_id}, {"email": user_id}]}, {"$set": updates})
+                return True
+            except PyMongoError as err:
+                logger.error(f"Error updating user '{user_id}': {err}")
+                return False
+
+        for email, u in self._in_memory_users.items():
+            if u.get("_id") == user_id or email == user_id.lower() or u.get("email", "").lower() == user_id.lower():
+                u.update(updates)
+                return True
+        return False
 
     def delete_user(self, user_id: str) -> bool:
         coll = self._get_collection()

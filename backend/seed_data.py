@@ -1,7 +1,7 @@
 import os
 import sys
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Ensure root workspace directory is in sys.path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -374,7 +374,7 @@ def run_seed():
         lvl = calc["level"]
         risk_counts[lvl] = risk_counts.get(lvl, 0) + 1
 
-        now_iso = datetime.utcnow().isoformat()
+        now_iso = datetime.now(timezone.utc).isoformat()
         prod["last_updated"] = now_iso
 
         if coll is not None:

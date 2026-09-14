@@ -27,13 +27,14 @@
                 <a href="{{ url_for('web.alerts', severity='Critical') }}" class="tab-btn {% if selected_severity == 'Critical' %}active{% endif %}">Critical</a>
                 <a href="{{ url_for('web.alerts', severity='High Risk') }}" class="tab-btn {% if selected_severity == 'High Risk' %}active{% endif %}">High Risk</a>
                 <a href="{{ url_for('web.alerts', severity='Warning') }}" class="tab-btn {% if selected_severity == 'Warning' %}active{% endif %}">Warning</a>
+                <a href="{{ url_for('web.alerts', severity='Safe') }}" class="tab-btn {% if selected_severity == 'Safe' %}active{% endif %}">Safe / Normal</a>
             </div>
         </div>
 
         <div class="alerts-feed" style="max-height: none;">
             {% if alerts %}
                 {% for a in alerts %}
-                <div class="alert-item {{ a.severity | replace(' ', '-') }}" style="padding: 1rem 1.25rem;">
+                <div class="alert-item {{ a.css_class }} {{ a.severity | replace(' ', '-') }} {{ a.type | replace(' ', '-') }}" style="padding: 1rem 1.25rem; border-left: 4px solid {{ a.border_color }};">
                     <div class="alert-item-head" style="margin-bottom: 0.4rem;">
                         <div style="display: flex; align-items: center; gap: 0.6rem;">
                             <span style="font-weight: 700; color: var(--text-main); font-size: 0.92rem;">{{ a.type | default('Alert') }} - {{ a.product_name }}</span>
@@ -92,10 +93,17 @@
                 </div>
                 {% endfor %}
             {% else %}
-                <div class="empty-state">
-                    <i class="fa-solid fa-shield-check" style="color:var(--color-safe);"></i>
-                    <h4 style="font-size: 1.1rem; color: var(--text-main); font-weight: 700;">No Low-Stock or Expiry Alerts</h4>
-                    <p style="font-size: 0.85rem; color: var(--text-muted); max-width: 400px;">All monitored products are currently operating within safe threshold parameters.</p>
+                <div class="empty-state" style="padding: 3rem 1rem; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem;">
+                    <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(22, 163, 74, 0.12); display: flex; align-items: center; justify-content: center; color: var(--color-safe); font-size: 1.75rem; border: 1px dashed var(--color-safe);">
+                        <i class="fa-solid fa-shield-check"></i>
+                    </div>
+                    <h4 style="font-size: 1.1rem; color: var(--text-main); font-weight: 700; margin: 0;">No Active Inventory Risk Alerts</h4>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0; max-width: 420px;">All monitored products are currently operating within safe threshold parameters. No low-stock or critical expiry warnings exist.</p>
+                    <div style="display: flex; gap: 0.6rem; margin-top: 0.5rem;">
+                        <a href="{{ url_for('web.inventory') }}" class="btn-header-action" style="background: var(--primary-accent); border-color: var(--primary-accent); color: #ffffff;">
+                            <i class="fa-solid fa-boxes-stacked"></i> Browse Monitored Inventory
+                        </a>
+                    </div>
                 </div>
             {% endif %}
         </div>

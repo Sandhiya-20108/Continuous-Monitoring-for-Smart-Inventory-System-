@@ -1,6 +1,6 @@
 import secrets
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from werkzeug.security import check_password_hash, generate_password_hash
 from backend.database import MongoDBConnection
 from backend.repositories.user_repository import UserRepository
@@ -42,13 +42,14 @@ class AuthService:
             "email": user_doc.get("email"),
             "username": user_doc.get("username"),
             "role": user_doc.get("role", "staff"),
-            "full_name": user_doc.get("full_name")
+            "full_name": user_doc.get("full_name"),
+            "allow_profile_edit": bool(user_doc.get("allow_profile_edit", False))
         }
 
         self._active_sessions[token] = {
             "user": user_info,
-            "created_at": datetime.utcnow(),
-            "expires_at": datetime.utcnow() + timedelta(hours=24)
+            "created_at": datetime.now(timezone.utc),
+            "expires_at": datetime.now(timezone.utc) + timedelta(hours=24)
         }
 
         logger.info(f"User '{user_info['email']}' ({user_info['role']}) logged in successfully.")
@@ -64,7 +65,7 @@ class AuthService:
             return None
 
         session = self._active_sessions[token]
-        if datetime.utcnow() > session["expires_at"]:
+        if datetime.now(timezone.utc) > session["expires_at"]:
             del self._active_sessions[token]
             return None
 
@@ -107,12 +108,34 @@ class AuthService:
             "password_hash": generate_password_hash(pwd),
             "role": "staff",
             "full_name": full_name_clean,
-            "created_at": datetime.utcnow().isoformat()
+            "allow_profile_edit": False,
+            "created_at": datetime.now(timezone.utc).isoformat()
         }
 
         if self.repository.create_user(user_dict):
             return {"success": True, "message": "Staff account created successfully! Please sign in below."}
         return {"success": False, "message": "Failed to create staff account due to a database error."}
+
+    def toggle_staff_profile_edit(self, user_id: str, allow: bool) -> dict:
+        """Enables or disables profile editing permission for a staff member."""
+        user = self.repository.find_by_id(user_id)
+        if not user:
+            return {"success": False, "message": "Staff member not found."}
+        
+        success = self.repository.update_user(user_id, {"allow_profile_edit": allow})
+        if success:
+            status_str = "allowed" if allow else "disabled"
+            return {"success": True, "message": f"Profile editing has been {status_str} for {user.get('full_name') or user.get('username')}."}
+        return {"success": False, "message": "Failed to update staff profile permission."}
+
+    def update_staff_user(self, user_id: str, updates: dict) -> dict:
+        """Updates staff profile details in persistent repository."""
+        if not user_id:
+            return {"success": False, "message": "User ID is required."}
+        updates["updated_at"] = datetime.now(timezone.utc).isoformat()
+        if self.repository.update_user(user_id, updates):
+            return {"success": True, "message": "Profile updated successfully."}
+        return {"success": False, "message": "Failed to update profile due to database error."}
 
     def delete_staff_user(self, user_id: str) -> dict:
         """Deletes a staff user account (Admin operation)."""

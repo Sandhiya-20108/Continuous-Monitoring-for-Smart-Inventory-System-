@@ -2,9 +2,10 @@ import json
 import os
 import random
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from backend.models.inventory_model import InventoryItemModel
 from backend.utils import risk_engine
+from backend.utils import view_helpers
 from backend.database import MongoDBConnection
 from backend.repositories.inventory_repository import InventoryRepository
 
@@ -16,6 +17,8 @@ class InventoryService:
     Orchestrates MongoDB Atlas repository persistent storage with dynamic Risk Intelligence calculation.
     Includes seamless fallback to in-memory JSON store if MongoDB URI is unconfigured or offline.
     """
+    _saved_reports = []
+
     def __init__(self, data_file_path: str = None, uri: str = None):
         if data_file_path is None:
             base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -43,7 +46,7 @@ class InventoryService:
             "quantity_changed": qty_changed,
             "old_stock": old_stock,
             "new_stock": new_stock,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "user": user or "System Administrator",
             "role": role or "Staff",
             "notes": notes or ""
@@ -62,6 +65,7 @@ class InventoryService:
 
     def get_product_history(self, product_id: str) -> list:
         """Retrieves transaction history for a specific product."""
+        txs = []
         if self.use_mongodb and self.db_conn and self.db_conn.is_connected():
             try:
                 coll = self.db_conn.get_collection("inventory_transactions")
@@ -71,14 +75,18 @@ class InventoryService:
                         if "_id" in d:
                             d["_id"] = str(d["_id"])
                     if docs:
-                        return docs
+                        txs = docs
             except Exception as err:
                 logger.error(f"Error fetching history from MongoDB: {err}")
 
-        return [t for t in self._transactions if t.get("product_id") == product_id or t.get("product_name") == product_id]
+        if not txs:
+            txs = [t for t in self._transactions if t.get("product_id") == product_id or t.get("product_name") == product_id]
+
+        return [view_helpers.present_transaction(t) for t in txs]
 
     def get_recent_transactions(self, limit: int = 10) -> list:
         """Retrieves overall recent transaction history across all products."""
+        txs = []
         if self.use_mongodb and self.db_conn and self.db_conn.is_connected():
             try:
                 coll = self.db_conn.get_collection("inventory_transactions")
@@ -88,11 +96,14 @@ class InventoryService:
                         if "_id" in d:
                             d["_id"] = str(d["_id"])
                     if docs:
-                        return docs
+                        txs = docs
             except Exception as err:
                 logger.error(f"Error fetching recent transactions from MongoDB: {err}")
 
-        return self._transactions[:limit]
+        if not txs:
+            txs = self._transactions[:limit]
+
+        return [view_helpers.present_transaction(t) for t in txs[:limit]]
 
     def update_stock_quantity(self, product_id: str, quantity: int, operation: str = "ADJUSTMENT", user: str = "Admin", role: str = "Admin", notes: str = "") -> dict:
         """Updates product stock quantity supporting Stock In (Receive), Stock Out (Issue), and Direct Adjustments with full audit validation."""
@@ -130,7 +141,7 @@ class InventoryService:
             qty_changed = new_stock - old_stock
             op_label = "Direct Stock Adjustment"
 
-        now_iso = datetime.utcnow().isoformat()
+        now_iso = datetime.now(timezone.utc).isoformat()
         update_dict = {
             "current_stock": new_stock,
             "last_updated": now_iso
@@ -174,7 +185,7 @@ class InventoryService:
         if status_clean not in valid_statuses:
             return {"success": False, "message": f"Invalid alert status. Allowed values: {', '.join(valid_statuses)}"}
 
-        now_iso = datetime.utcnow().isoformat()
+        now_iso = datetime.now(timezone.utc).isoformat()
         status_doc = {
             "alert_id": alert_id,
             "status": status_clean,
@@ -270,6 +281,8 @@ class InventoryService:
             augmented["recommended_action"] = reorder_info["recommended_action"]
             augmented["requires_reorder"] = reorder_info["requires_reorder"]
 
+            presented = view_helpers.present_product(augmented)
+
             # Filtering
             if category and category.lower() != "all":
                 c_low = category.lower()
@@ -293,7 +306,7 @@ class InventoryService:
                 if not (id_match or name_match or sku_match or cat_match or sup_match or health_match):
                     continue
 
-            results.append(augmented)
+            results.append(presented)
         
         # Sort by risk_score descending so high-risk items appear first
         results.sort(key=lambda x: x["risk_score"], reverse=True)
@@ -339,7 +352,7 @@ class InventoryService:
         augmented["recommended_reorder"] = reorder_info["recommended_reorder"]
         augmented["recommended_action"] = reorder_info["recommended_action"]
         augmented["requires_reorder"] = reorder_info["requires_reorder"]
-        return augmented
+        return view_helpers.present_product(augmented)
 
     def get_dashboard_metrics(self) -> dict:
         """Calculates system-level inventory metrics and Overall Health Score."""
@@ -395,7 +408,7 @@ class InventoryService:
                 "safe": safe_count
             },
             "category_breakdown": category_breakdown,
-            "last_updated": datetime.utcnow().isoformat()
+            "last_updated": datetime.now(timezone.utc).isoformat()
         }
 
     def get_assistant_summary(self) -> dict:
@@ -449,6 +462,319 @@ class InventoryService:
             "increasing_demand_count": len(increasing_items)
         }
 
+    def get_stock_movement_analytics(self, months: int = 6, selected_month: str = None) -> dict:
+        """
+        Calculates stock movement flow telemetry (Inbound, Outbound, Current Load) per month
+        based on MongoDB transaction history and inventory load.
+        Supports 3, 6, 9, 12 month time ranges and specific month selection with zero JavaScript.
+        """
+        try:
+            range_months = int(months)
+            if range_months not in [3, 6, 9, 12]:
+                range_months = 6
+        except (ValueError, TypeError):
+            range_months = 6
+
+        products = self._fetch_raw_products()
+        total_current_stock = sum(int(p.get("current_stock", 0)) for p in products)
+
+        all_txs = []
+        if self.use_mongodb and self.db_conn and self.db_conn.is_connected():
+            try:
+                coll = self.db_conn.get_collection("inventory_transactions")
+                if coll is not None:
+                    docs = list(coll.find().sort("timestamp", 1))
+                    for d in docs:
+                        if "_id" in d:
+                            d["_id"] = str(d["_id"])
+                    all_txs = docs
+            except Exception as err:
+                logger.error(f"Error fetching transactions for analytics: {err}")
+        
+        if not all_txs:
+            all_txs = list(reversed(self._transactions))
+
+        tx_by_month = {}
+        for tx in all_txs:
+            ts_str = str(tx.get("timestamp", ""))
+            if len(ts_str) >= 7:
+                ym = ts_str[:7]
+            else:
+                continue
+
+            if ym not in tx_by_month:
+                tx_by_month[ym] = {"inbound": 0, "outbound": 0, "adjustments": 0}
+
+            tx_type = str(tx.get("type", "")).upper()
+            qty = abs(int(tx.get("quantity_changed", 0)))
+            if tx_type == "STOCK_IN" or "IN" in tx_type:
+                tx_by_month[ym]["inbound"] += qty
+            elif tx_type == "STOCK_OUT" or "OUT" in tx_type:
+                tx_by_month[ym]["outbound"] += qty
+            else:
+                tx_by_month[ym]["adjustments"] += int(tx.get("quantity_changed", 0))
+
+        now = datetime.now()
+        cur_year = now.year
+        cur_month = now.month
+
+        month_buckets = []
+        for i in range(range_months - 1, -1, -1):
+            m = cur_month - i
+            y = cur_year
+            while m <= 0:
+                m += 12
+                y -= 1
+            ym_key = f"{y:04d}-{m:02d}"
+            m_dt = datetime(y, m, 1)
+            month_label = m_dt.strftime("%b")
+            full_label = m_dt.strftime("%B %Y")
+            
+            month_buckets.append({
+                "year_month": ym_key,
+                "year": y,
+                "month_num": m,
+                "name": month_label,
+                "full_label": full_label
+            })
+
+        valid_ym_keys = [b["year_month"] for b in month_buckets]
+        if not selected_month or selected_month not in valid_ym_keys:
+            active_ym = valid_ym_keys[-1]
+        else:
+            active_ym = selected_month
+
+        inbound_pts = []
+        outbound_pts = []
+        load_pts = []
+        month_data = []
+
+        total_inbound_range = 0
+        total_outbound_range = 0
+
+        for idx, bucket in enumerate(month_buckets):
+            ym = bucket["year_month"]
+            tx_info = tx_by_month.get(ym, {"inbound": 0, "outbound": 0, "adjustments": 0})
+            
+            in_qty = tx_info["inbound"]
+            out_qty = tx_info["outbound"]
+            
+            total_inbound_range += in_qty
+            total_outbound_range += out_qty
+            
+            load_val = max(10, total_current_stock - (range_months - 1 - idx) * 15)
+
+            inbound_pts.append(in_qty)
+            outbound_pts.append(out_qty)
+            load_pts.append(load_val)
+
+        if range_months > 1:
+            x_step = 700.0 / (range_months - 1)
+        else:
+            x_step = 0.0
+
+        x_coords = [round(50.0 + (i * x_step), 1) for i in range(range_months)]
+
+        max_val = max(max(inbound_pts or [0]), max(outbound_pts or [0]), max(load_pts or [0]), 1)
+        min_val = 0
+
+        def map_y(val):
+            if max_val == min_val:
+                return 150.0
+            norm = float(val - min_val) / float(max_val - min_val)
+            return round(160.0 - (norm * 135.0), 1)
+
+        inbound_y = [map_y(v) for v in inbound_pts]
+        outbound_y = [map_y(v) for v in outbound_pts]
+        load_y = [map_y(v) for v in load_pts]
+
+        def build_smooth_path(x_arr, y_arr, close_bottom=False):
+            if not x_arr or len(x_arr) < 2:
+                return ""
+            path = f"M {x_arr[0]} {y_arr[0]}"
+            for i in range(len(x_arr) - 1):
+                x1, y1 = x_arr[i], y_arr[i]
+                x2, y2 = x_arr[i+1], y_arr[i+1]
+                cx1 = x1 + (x2 - x1) * 0.45
+                cy1 = y1
+                cx2 = x1 + (x2 - x1) * 0.55
+                cy2 = y2
+                path += f" C {cx1:.1f} {cy1:.1f}, {cx2:.1f} {cy2:.1f}, {x2} {y2}"
+            if close_bottom:
+                path += f" L {x_arr[-1]} 180 L {x_arr[0]} 180 Z"
+            return path
+
+        inbound_curve = build_smooth_path(x_coords, inbound_y, False)
+        inbound_area = build_smooth_path(x_coords, inbound_y, True)
+
+        outbound_curve = build_smooth_path(x_coords, outbound_y, False)
+        outbound_area = build_smooth_path(x_coords, outbound_y, True)
+
+        load_curve = build_smooth_path(x_coords, load_y, False)
+        load_area = build_smooth_path(x_coords, load_y, True)
+
+        active_inbound = 0
+        active_outbound = 0
+        active_load = total_current_stock
+
+        for i, bucket in enumerate(month_buckets):
+            is_act = (bucket["year_month"] == active_ym)
+            if is_act:
+                active_inbound = inbound_pts[i]
+                active_outbound = outbound_pts[i]
+                active_load = load_pts[i]
+
+            month_data.append({
+                "label": bucket["name"],
+                "name": bucket["name"],
+                "year_month": bucket["year_month"],
+                "year": bucket["year"],
+                "full_label": bucket["full_label"],
+                "is_active": is_act,
+                "inbound": inbound_pts[i],
+                "outbound": outbound_pts[i],
+                "current_load": load_pts[i],
+                "x": x_coords[i],
+                "inbound_y": inbound_y[i],
+                "outbound_y": outbound_y[i],
+                "load_y": load_y[i]
+            })
+
+        has_transactions = (total_inbound_range > 0 or total_outbound_range > 0 or total_current_stock > 0)
+
+        return {
+            "selected_range": range_months,
+            "selected_month": active_ym,
+            "inbound_total": f"{active_inbound:,}",
+            "outbound_total": f"{active_outbound:,}",
+            "load_total": f"{active_load:,}",
+            "active_month": active_ym,
+            "month_names": [b["name"] for b in month_buckets],
+            "month_data": month_data,
+            "inbound_curve": inbound_curve,
+            "inbound_area": inbound_area,
+            "outbound_curve": outbound_curve,
+            "outbound_area": outbound_area,
+            "load_curve": load_curve,
+            "load_area": load_area,
+            "has_transactions": has_transactions
+        }
+
+    def get_top_categories_analytics(self) -> dict:
+        """
+        Groups products by category in Python, calculates stock totals and percentages,
+        sorts descending, maps colors, and computes SVG donut parameters.
+        """
+        products = self._fetch_raw_products()
+
+        if not products:
+            return {
+                "total_stock": "0",
+                "raw_total_stock": 0,
+                "total_products": 0,
+                "categories": [],
+                "top_category_name": "N/A",
+                "top_category_pct": 0,
+                "has_data": False
+            }
+
+        COLOR_MAP = {
+            "electronics": "#06B6D4",
+            "industrial": "#7C3AED",
+            "medical supplies": "#14B8A6",
+            "medical": "#14B8A6",
+            "healthcare": "#14B8A6",
+            "perishables": "#D4A72C",
+            "food": "#D4A72C",
+            "hardware": "#6366F1",
+            "general": "#94A3B8"
+        }
+        PALETTE = ["#06B6D4", "#7C3AED", "#14B8A6", "#D4A72C", "#6366F1", "#F43F5E", "#F59E0B"]
+
+        cat_groups = {}
+        total_stock_all = 0
+        total_products_all = len(products)
+
+        for p in products:
+            c_raw = (p.get("category") or "General").strip()
+            c_norm = c_raw.title()
+            c_stock = max(0, int(p.get("current_stock", 0)))
+
+            if c_norm not in cat_groups:
+                cat_groups[c_norm] = {"name": c_norm, "stock": 0, "count": 0}
+
+            cat_groups[c_norm]["stock"] += c_stock
+            cat_groups[c_norm]["count"] += 1
+            total_stock_all += c_stock
+
+        sorted_cats = sorted(cat_groups.values(), key=lambda x: x["stock"], reverse=True)
+
+        CIRCUMFERENCE = 376.99
+        current_offset = 0
+        cat_list = []
+
+        for idx, c in enumerate(sorted_cats):
+            pct = round((c["stock"] / total_stock_all * 100), 1) if total_stock_all > 0 else 0
+            c_key = c["name"].lower()
+            color = COLOR_MAP.get(c_key, PALETTE[idx % len(PALETTE)])
+
+            stroke_length = (pct / 100.0) * CIRCUMFERENCE
+            dash_array = f"{stroke_length:.2f} {(CIRCUMFERENCE - stroke_length):.2f}"
+            dash_offset = f"{-current_offset:.2f}"
+            current_offset += stroke_length
+
+            cat_list.append({
+                "name": c["name"],
+                "stock": f"{c['stock']:,}",
+                "raw_stock": c["stock"],
+                "count": c["count"],
+                "percentage": pct,
+                "color": color,
+                "is_top": (idx == 0),
+                "dash_array": dash_array,
+                "dash_offset": dash_offset
+            })
+
+        top_cat = cat_list[0] if cat_list else {"name": "N/A", "percentage": 0}
+
+        return {
+            "total_stock": f"{total_stock_all:,}",
+            "raw_total_stock": total_stock_all,
+            "total_products": total_products_all,
+            "categories": cat_list,
+            "top_category_name": top_cat["name"],
+            "top_category_pct": top_cat["percentage"],
+            "has_data": len(cat_list) > 0
+        }
+
+    @staticmethod
+    def classify_alert(alert: dict) -> dict:
+        """Classifies alert into exact CSS class, border color, and badge color."""
+        alt_type = str(alert.get("type", "")).strip()
+        severity = str(alert.get("severity", "")).strip()
+
+        if severity == "Critical" or alt_type == "Out of Stock":
+            css_class = "critical-alert high-risk-alert"
+            border_color = "#BE123C"
+            badge_color = "#f87171"
+        elif alt_type == "Low Stock" or severity in ["Warning", "Medium", "Low", "Medium Risk", "High Risk", "High"]:
+            css_class = "medium-risk-alert low-stock-alert warning-alert"
+            border_color = "#D4A72C"
+            badge_color = "#fbbf24"
+        elif severity in ["Safe", "Normal", "Healthy"] or alt_type in ["Demand Trend", "Demand Surge"]:
+            css_class = "safe-alert healthy-alert normal-alert"
+            border_color = "#10B981"
+            badge_color = "#34d399"
+        else:
+            css_class = "info-alert"
+            border_color = "#3B82F6"
+            badge_color = "#60a5fa"
+
+        alert["css_class"] = css_class
+        alert["border_color"] = border_color
+        alert["badge_color"] = badge_color
+        return alert
+
     def get_alerts(self, severity_filter=None) -> list:
         """Returns structured alert feed for the Alert Center."""
         products = self.get_all_products()
@@ -463,7 +789,7 @@ class InventoryService:
                     "category": p["category"],
                     "severity": "Critical",
                     "type": "Out of Stock",
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                     "message": f"CRITICAL: {p['name']} is completely OUT OF STOCK (0 units)."
                 })
             elif p["current_stock"] < p["min_stock"]:
@@ -474,7 +800,7 @@ class InventoryService:
                     "category": p["category"],
                     "severity": "High Risk" if p["days_to_stockout"] <= 3 else "Warning",
                     "type": "Low Stock",
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                     "message": f"Stock level for {p['name']} ({p['current_stock']} {p['unit']}) has dropped below min safety threshold ({p['min_stock']})."
                 })
 
@@ -486,7 +812,7 @@ class InventoryService:
                     "category": p["category"],
                     "severity": "Critical" if p["expiry_info"]["days_remaining"] <= 3 else "Warning",
                     "type": "Expiry Approaching",
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                     "message": f"EXPIRY ALERT: {p['name']} ({p['current_stock']} units) expires in {p['expiry_info']['days_remaining']} days."
                 })
 
@@ -498,7 +824,7 @@ class InventoryService:
                     "category": p["category"],
                     "severity": "Warning",
                     "type": "Unusual Movement",
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                     "message": p["anomaly_info"]["description"]
                 })
 
@@ -510,7 +836,7 @@ class InventoryService:
                     "category": p["category"],
                     "severity": "Safe",
                     "type": "Demand Trend",
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                     "message": f"DEMAND SURGE: {p['name']} daily consumption trend is increasing over the last 7 days."
                 })
 
@@ -522,6 +848,8 @@ class InventoryService:
             a["status"] = st_info.get("status", "New")
             a["updated_by"] = st_info.get("updated_by", "")
             a["updated_at"] = st_info.get("updated_at", "")
+            self.classify_alert(a)
+            view_helpers.present_alert(a)
 
         severity_order = {"Critical": 0, "High Risk": 1, "Warning": 2, "Safe": 3}
         alerts.sort(key=lambda x: severity_order.get(x["severity"], 4))
@@ -545,7 +873,7 @@ class InventoryService:
             old_stock = int(p["current_stock"])
             new_stock = max(0, old_stock - consumption)
             new_today_mov = int(p.get("today_movement", 0)) + consumption
-            new_timestamp = datetime.utcnow().isoformat()
+            new_timestamp = datetime.now(timezone.utc).isoformat()
             
             history = list(p.get("daily_usage_history", []))
             if history:
@@ -581,7 +909,7 @@ class InventoryService:
 
         return {
             "status": "success",
-            "tick_timestamp": datetime.utcnow().isoformat(),
+            "tick_timestamp": datetime.now(timezone.utc).isoformat(),
             "updated_products": updated_details,
             "current_metrics": metrics
         }
@@ -609,7 +937,7 @@ class InventoryService:
             "expiry_date": product_data.get("expiry_date", "2027-12-31"),
             "location": product_data.get("location", "Warehouse Main"),
             "supplier": product_data.get("supplier", "Standard Vendor"),
-            "last_updated": datetime.utcnow().isoformat()
+            "last_updated": datetime.now(timezone.utc).isoformat()
         }
 
         # Save to MongoDB if available
@@ -637,7 +965,7 @@ class InventoryService:
                 else:
                     update_fields[f] = update_data[f]
 
-        update_fields["last_updated"] = datetime.utcnow().isoformat()
+        update_fields["last_updated"] = datetime.now(timezone.utc).isoformat()
 
         internal_id = existing["_id"]
         if self.use_mongodb and self.repository and self.db_conn.is_connected():
@@ -667,5 +995,67 @@ class InventoryService:
             del self._in_memory_products[product_id]
 
         return {"success": True, "message": "Product deleted successfully"}
+
+    def save_report_config(self, name: str, report_type: str, filters: dict, columns: list = None, created_by: str = "Admin") -> dict:
+        """Saves a custom report configuration to MongoDB or fallback memory store."""
+        import time
+        doc = {
+            "id": f"rpt-{int(time.time())}",
+            "name": name or f"Custom {report_type.capitalize()} Report",
+            "report_type": report_type or "inventory",
+            "filters": filters or {},
+            "columns": columns or [],
+            "created_by": created_by or "Admin",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        if self.use_mongodb and self.db_conn and self.db_conn.is_connected():
+            try:
+                coll = self.db_conn.get_collection("saved_reports")
+                if coll is not None:
+                    coll.insert_one(dict(doc))
+            except Exception as err:
+                logger.error(f"Error saving report config to MongoDB: {err}")
+
+        if not hasattr(InventoryService, "_saved_reports") or InventoryService._saved_reports is None:
+            InventoryService._saved_reports = []
+        InventoryService._saved_reports.insert(0, doc)
+        return doc
+
+    def get_saved_reports(self) -> list:
+        """Retrieves all saved report configurations."""
+        if self.use_mongodb and self.db_conn and self.db_conn.is_connected():
+            try:
+                coll = self.db_conn.get_collection("saved_reports")
+                if coll is not None:
+                    docs = list(coll.find().sort("created_at", -1))
+                    for d in docs:
+                        if "_id" in d:
+                            d["_id"] = str(d["_id"])
+                    if docs:
+                        return docs
+            except Exception as err:
+                logger.error(f"Error fetching saved reports from MongoDB: {err}")
+
+        if not hasattr(InventoryService, "_saved_reports") or InventoryService._saved_reports is None:
+            InventoryService._saved_reports = []
+        return InventoryService._saved_reports
+
+    def delete_saved_report(self, report_id: str) -> bool:
+        """Deletes a saved report configuration by ID."""
+        if self.use_mongodb and self.db_conn and self.db_conn.is_connected():
+            try:
+                coll = self.db_conn.get_collection("saved_reports")
+                if coll is not None:
+                    coll.delete_one({"$or": [{"id": report_id}, {"_id": report_id}]})
+            except Exception as err:
+                logger.error(f"Error deleting saved report from MongoDB: {err}")
+
+        if hasattr(InventoryService, "_saved_reports"):
+            InventoryService._saved_reports = [
+                r for r in InventoryService._saved_reports 
+                if r.get("id") != report_id and str(r.get("_id")) != report_id
+            ]
+        return True
+
 
 

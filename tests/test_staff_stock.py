@@ -107,6 +107,38 @@ class TestStaffStockOperationsAndFeatures(unittest.TestCase):
         st_info = self.service.get_alert_status(alert_id)
         self.assertEqual(st_info["status"], "Resolved")
 
+    def test_staff_dashboard_alert_border_colors(self):
+        """Test staff dashboard alert cards assign correct border styles based on alert type and severity."""
+        self.login_as_staff()
+        res = self.client.get("/staff/dashboard")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn(b"alert-card", res.data)
+        # Check CSS definitions exist
+        resp_css = self.client.get("/static/css/styles.css")
+        self.assertEqual(resp_css.status_code, 200)
+        self.assertIn(b".demand-trend-alert", resp_css.data)
+        self.assertIn(b".low-stock-alert", resp_css.data)
+
+    def test_alert_classification(self):
+        """Test exact alert type and severity classification mapping to CSS classes and colors."""
+        from backend.services.inventory_service import InventoryService
+        
+        low_stock_alert = InventoryService.classify_alert({"type": "Low Stock", "severity": "High Risk"})
+        self.assertEqual(low_stock_alert["border_color"], "#D4A72C")
+        self.assertIn("medium-risk-alert", low_stock_alert["css_class"])
+
+        demand_trend_alert = InventoryService.classify_alert({"type": "Demand Trend", "severity": "Safe"})
+        self.assertEqual(demand_trend_alert["border_color"], "#10B981")
+        self.assertIn("safe-alert", demand_trend_alert["css_class"])
+
+        critical_alert = InventoryService.classify_alert({"type": "Out of Stock", "severity": "Critical"})
+        self.assertEqual(critical_alert["border_color"], "#BE123C")
+        self.assertIn("critical-alert", critical_alert["css_class"])
+
+        safe_alert = InventoryService.classify_alert({"type": "Stock Level", "severity": "Safe"})
+        self.assertEqual(safe_alert["border_color"], "#10B981")
+        self.assertIn("safe-alert", safe_alert["css_class"])
+
     def test_reorder_recommendation_rule_calculation(self):
         """Test rule-based reorder recommendation logic."""
         products = self.service.get_all_products()

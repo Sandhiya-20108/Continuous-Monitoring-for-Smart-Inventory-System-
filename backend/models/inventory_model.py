@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 class InventoryItemModel:
     """
@@ -20,7 +20,7 @@ class InventoryItemModel:
         self.expiry_date = data.get("expiry_date", "")
         self.location = data.get("location", "Warehouse Main")
         self.supplier = data.get("supplier", "Standard Vendor")
-        self.last_updated = data.get("last_updated", datetime.utcnow().isoformat())
+        self.last_updated = data.get("last_updated", datetime.now(timezone.utc).isoformat())
 
     def to_dict(self) -> dict:
         return {

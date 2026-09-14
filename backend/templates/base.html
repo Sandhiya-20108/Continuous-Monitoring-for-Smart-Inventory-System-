@@ -13,7 +13,7 @@
     <!-- Custom Design System CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
-<body class="{{ session.get('theme', 'dark') }}-theme" data-theme="{{ session.get('theme', 'dark') }}">
+<body class="role-{{ session.get('user', {}).get('role', 'admin') }} {{ session.get('theme', 'dark') }}-theme" data-theme="{{ session.get('theme', 'dark') }}" data-role="{{ session.get('user', {}).get('role', 'admin') }}">
 
     {% if session.get('user') %}
     <!-- MAIN ENTERPRISE APPLICATION SHELL -->
@@ -40,9 +40,15 @@
                   {% if messages %}
                     <div style="margin-bottom: 1rem;">
                       {% for category, message in messages %}
-                        <div class="alert alert-{{ category if category != 'error' else 'danger' }}" style="padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 0.5rem; background: {{ 'rgba(239, 68, 68, 0.15)' if category in ['error', 'danger'] else 'rgba(16, 185, 129, 0.15)' }}; border: 1px solid {{ '#ef4444' if category in ['error', 'danger'] else '#10b981' }}; color: {{ '#f87171' if category in ['error', 'danger'] else '#34d399' }};">
+                        {% if category in ['error', 'danger'] %}
+                        <div class="alert alert-danger" style="padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 0.5rem; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #f87171;">
                           {{ message }}
                         </div>
+                        {% else %}
+                        <div class="alert alert-success" style="padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 0.5rem; background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399;">
+                          {{ message }}
+                        </div>
+                        {% endif %}
                       {% endfor %}
                     </div>
                   {% endif %}

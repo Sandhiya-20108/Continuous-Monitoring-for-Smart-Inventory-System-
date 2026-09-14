@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 class UserModel:
     """
@@ -12,7 +12,8 @@ class UserModel:
         self.password_hash = data.get("password_hash", "")
         self.role = data.get("role", "customer").strip().lower()
         self.full_name = data.get("full_name", "").strip()
-        self.created_at = data.get("created_at", datetime.utcnow().isoformat())
+        self.allow_profile_edit = bool(data.get("allow_profile_edit", False))
+        self.created_at = data.get("created_at", datetime.now(timezone.utc).isoformat())
 
     def to_dict(self, include_sensitive: bool = False) -> dict:
         doc = {
@@ -20,6 +21,7 @@ class UserModel:
             "username": self.username,
             "role": self.role,
             "full_name": self.full_name,
+            "allow_profile_edit": self.allow_profile_edit,
             "created_at": self.created_at
         }
         if self.id:

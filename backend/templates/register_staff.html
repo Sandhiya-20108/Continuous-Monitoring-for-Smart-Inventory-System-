@@ -50,13 +50,15 @@
                 </div>
                 <form action="{{ url_for('web.toggle_theme') }}" method="POST" style="margin:0;">
                     <input type="hidden" name="redirect_url" value="{{ request.full_path }}">
-                    <button type="submit" class="btn-header-action" title="Toggle Light/Dark Theme" style="padding: 0.35rem 0.65rem; font-size: 0.78rem;">
-                        {% if session.get('theme', 'dark') == 'light' %}
-                        <i class="fa-solid fa-moon"></i> <span>Dark</span>
-                        {% else %}
-                        <i class="fa-solid fa-sun"></i> <span>Light</span>
-                        {% endif %}
+                    {% if session.get('theme', 'dark') == 'light' %}
+                    <button type="submit" class="theme-toggle-btn btn-header-action" title="Switch to dark mode" aria-label="Switch to dark mode">
+                        <i class="fa-solid fa-moon"></i>
                     </button>
+                    {% else %}
+                    <button type="submit" class="theme-toggle-btn btn-header-action" title="Switch to light mode" aria-label="Switch to light mode">
+                        <i class="fa-solid fa-sun"></i>
+                    </button>
+                    {% endif %}
                 </form>
             </div>
 

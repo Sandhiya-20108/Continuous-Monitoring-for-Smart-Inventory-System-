@@ -1,41 +1,47 @@
-<!-- Top Application Header -->
+<!-- Top Application Header matching Dribbble Reference -->
 <header class="app-header">
     <div class="header-left">
-        <h1 class="page-title">{{ page_title | default('Dashboard Overview') }}</h1>
-        <div class="breadcrumb">Overview / {{ page_breadcrumb | default('Inventory Intelligence') }}</div>
+        <span class="header-pretitle">INVENTORY MANAGEMENT</span>
+        <h1 class="page-title">{{ page_title | default('Warehouse overview') }}</h1>
     </div>
 
     <div class="header-right">
-        <form action="{{ url_for('web.inventory') }}" method="GET" class="global-search">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" name="search" value="{{ search_query | default('') }}" placeholder="Search inventory SKU or item...">
+        <!-- Global Search Field -->
+        <form action="{{ url_for('web.inventory') }}" method="GET" class="header-search-form">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" name="search" value="{{ search_query | default('') }}" placeholder="Search SKU, product..." class="header-search-input">
         </form>
 
-        <div class="monitoring-pulse-badge">
-            <span class="pulse-dot"></span>
-            <span>MONITORING: ACTIVE</span>
-        </div>
+        <!-- Notification Alert Bell Icon -->
+        <a href="{{ url_for('web.alerts') }}" class="header-icon-btn" title="View Active Risk Alerts" aria-label="View Active Risk Alerts">
+            <i class="fa-solid fa-bell"></i>
+            {% if alerts is defined and alerts %}
+            <span class="header-badge-count">{{ alerts | length }}</span>
+            {% endif %}
+        </a>
 
-        <form action="{{ url_for('web.simulate_tick') }}" method="POST" style="margin:0;">
-            <input type="hidden" name="redirect_url" value="{{ request.full_path }}">
-            <button type="submit" class="btn-header-action" title="Simulate Telemetry Consumption Tick">
-                <i class="fa-solid fa-bolt"></i> Simulate Tick
-            </button>
-        </form>
-
+        <!-- Theme Toggle Icon Button -->
         <form action="{{ url_for('web.toggle_theme') }}" method="POST" style="margin:0;">
             <input type="hidden" name="redirect_url" value="{{ request.full_path }}">
-            <button type="submit" class="btn-header-action" title="Toggle Light/Dark Theme">
-                {% if session.get('theme', 'dark') == 'light' %}
-                <i class="fa-solid fa-moon"></i> <span>Dark Theme</span>
-                {% else %}
-                <i class="fa-solid fa-sun"></i> <span>Light Theme</span>
-                {% endif %}
+            {% if session.get('theme', 'dark') == 'light' %}
+            <button type="submit" class="header-icon-btn" title="Switch to dark mode" aria-label="Switch to dark mode">
+                <i class="fa-solid fa-moon"></i>
             </button>
+            {% else %}
+            <button type="submit" class="header-icon-btn" title="Switch to light mode" aria-label="Switch to light mode">
+                <i class="fa-solid fa-sun"></i>
+            </button>
+            {% endif %}
         </form>
 
-        <a href="{{ request.full_path }}" class="btn-header-action" title="Refresh Page Data">
-            <i class="fa-solid fa-rotate-right"></i> Refresh
+        <!-- Admin Profile Quick Link -->
+        <a href="{{ url_for('web.admin_settings') }}" class="header-profile-link" title="Admin Settings & Profile">
+            <div class="header-avatar">{{ session.get('user', {}).get('full_name', 'A')[0] | upper }}</div>
+        </a>
+
+        <!-- + Add Product Primary Action Button -->
+        <a href="{{ url_for('web.inventory', add_product='true') }}" class="btn-add-product-main">
+            <i class="fa-solid fa-plus"></i> Add item
         </a>
     </div>
 </header>

@@ -1,3 +1,4 @@
+import os
 import logging
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError, PyMongoError
@@ -33,10 +34,14 @@ class MongoDBConnection:
         try:
             client_kwargs = {
                 "serverSelectionTimeoutMS": self.timeout_ms,
-                "connectTimeoutMS": self.timeout_ms
+                "connectTimeoutMS": self.timeout_ms,
+                "socketTimeoutMS": self.timeout_ms
             }
             if HAS_CERTIFI:
                 client_kwargs["tlsCAFile"] = certifi.where()
+
+            if os.getenv("MONGODB_TLS_ALLOW_INVALID", "false").lower() == "true":
+                client_kwargs["tlsAllowInvalidCertificates"] = True
 
             self.client = MongoClient(
                 self.uri,
@@ -48,11 +53,22 @@ class MongoDBConnection:
             logger.info(f"Successfully connected to MongoDB database: {self.db_name}")
             return True
         except (ConnectionFailure, ServerSelectionTimeoutError) as err:
-            logger.warning(f"MongoDB connection timeout/failure: {err}")
+            err_str = str(err)
+            if "SSL handshake failed" in err_str or "TLSV1_ALERT" in err_str:
+                logger.warning(
+                    "MongoDB Atlas SSL/TLS handshake failed (network/IP restriction). Operating in fallback local JSON store mode."
+                )
+            else:
+                first_line = err_str.split("\n")[0] if err_str else "Connection timeout"
+                logger.warning(f"MongoDB connection timeout/failure: {first_line}")
+            logger.debug(f"Detailed MongoDB connection failure: {err}")
             self.close()
             return False
         except PyMongoError as err:
-            logger.error(f"MongoDB error during connection: {err}")
+            err_str = str(err)
+            first_line = err_str.split("\n")[0] if err_str else str(err)
+            logger.error(f"MongoDB error during connection: {first_line}")
+            logger.debug(f"Detailed MongoDB error: {err}")
             self.close()
             return False
 

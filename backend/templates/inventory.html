@@ -4,72 +4,83 @@
 
 {% block content %}
 <div class="card">
-    <div class="table-header-bar">
+    <div class="table-header-bar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
         <div class="table-title-group">
-            <h3><i class="fa-solid fa-boxes-stacked" style="color: var(--primary-accent);"></i> Inventory Items Monitor</h3>
-            <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">{{ products | length }} Products</span>
+            <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-boxes-stacked" style="color: var(--primary-accent);"></i> Inventory Items Monitor
+            </h3>
+            <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">Showing {{ products | length }} Monitored Products</span>
         </div>
 
-        <div class="table-controls">
-            <div style="display: flex; gap: 0.5rem;">
-                {% if session.get('user') and session['user'].get('role') == 'admin' %}
-                <a href="{{ url_for('web.inventory', add_product='true', category=selected_category, risk_level=selected_risk, search=search_query) }}" class="btn-header-action" style="background: var(--primary-accent); border-color: var(--primary-accent);">
-                    <i class="fa-solid fa-plus"></i> Add Product
-                </a>
-                <a href="{{ url_for('web.users') }}" class="btn-header-action" style="background: rgba(59, 130, 246, 0.15); border-color: var(--border-highlight); color: var(--primary-cyan);">
-                    <i class="fa-solid fa-users-gear"></i> Staff Accounts
-                </a>
-                {% endif %}
-                <a href="{{ url_for('web.export_report') }}" class="btn-header-action" title="Export Inventory CSV Report">
-                    <i class="fa-solid fa-file-export"></i> Export Report
-                </a>
-            </div>
-
-            <form action="{{ url_for('web.inventory') }}" method="GET" style="display: flex; gap: 0.5rem; align-items: center;">
-                <input type="hidden" name="risk_level" value="{{ selected_risk }}">
-                <input type="hidden" name="search" value="{{ search_query }}">
-
-                <select name="category" class="filter-select">
-                    <option value="all" {% if selected_category == 'all' %}selected{% endif %}>All Categories</option>
-                    <option value="Perishable" {% if selected_category == 'Perishable' %}selected{% endif %}>Perishable</option>
-                    <option value="Electronics" {% if selected_category == 'Electronics' %}selected{% endif %}>Electronics</option>
-                    <option value="Chemicals" {% if selected_category == 'Chemicals' %}selected{% endif %}>Chemicals</option>
-                    <option value="Industrial" {% if selected_category == 'Industrial' %}selected{% endif %}>Industrial</option>
-                    <option value="Consumables" {% if selected_category == 'Consumables' %}selected{% endif %}>Consumables</option>
-                </select>
-                <button type="submit" class="btn-header-action" title="Apply Category Filter"><i class="fa-solid fa-filter"></i> Filter</button>
-            </form>
-
-            <div class="risk-tabs">
-                {% for r in ['all', 'Critical', 'High Risk', 'Warning', 'Safe'] %}
-                <a href="{{ url_for('web.inventory', category=selected_category, risk_level=r, search=search_query) }}" 
-                   class="tab-btn {% if selected_risk == r %}active{% endif %}">
-                    {{ r | capitalize }}
-                </a>
-                {% endfor %}
-            </div>
+        <div class="table-controls" style="display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center;">
+            {% if session.get('user') and session['user'].get('role') == 'admin' %}
+            <a href="{{ url_for('web.inventory', add_product='true', category=selected_category, risk_level=selected_risk, search=search_query) }}" class="btn-header-action" style="background: var(--primary-accent); border-color: var(--primary-accent); color: #ffffff;">
+                <i class="fa-solid fa-plus"></i> Add Product
+            </a>
+            <a href="{{ url_for('web.users') }}" class="btn-header-action" style="background: rgba(124, 58, 237, 0.15); border-color: rgba(124, 58, 237, 0.3); color: #a78bfa;">
+                <i class="fa-solid fa-users-gear"></i> Staff Accounts
+            </a>
+            {% endif %}
+            <a href="{{ url_for('web.export_report') }}" class="btn-header-action" title="Export Inventory CSV Telemetry Report">
+                <i class="fa-solid fa-file-export"></i> Export CSV
+            </a>
         </div>
     </div>
 
-    <div class="table-responsive">
-        <table class="inventory-table">
+    <!-- Multi-Filter Toolbar -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.8rem; padding: 0.85rem 1rem; background: var(--bg-surface-hover, rgba(255,255,255,0.03)); border: 1px solid var(--border-color); border-radius: var(--radius-sm, 8px); margin-bottom: 1.25rem;">
+        <form action="{{ url_for('web.inventory') }}" method="GET" style="display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; flex: 1;">
+            <input type="hidden" name="risk_level" value="{{ selected_risk }}">
+            
+            <div style="position: relative; min-width: 220px; flex: 1;">
+                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-dim); font-size: 0.85rem;"></i>
+                <input type="text" name="search" value="{{ search_query | default('') }}" placeholder="Filter by product name or SKU..." class="form-control" style="padding-left: 2.2rem; font-size: 0.85rem; height: 38px;">
+            </div>
+
+            <select name="category" class="filter-select" style="height: 38px; font-size: 0.85rem;">
+                <option value="all" {% if selected_category == 'all' %}selected{% endif %}>All Categories</option>
+                <option value="Perishable" {% if selected_category == 'Perishable' %}selected{% endif %}>Perishable</option>
+                <option value="Electronics" {% if selected_category == 'Electronics' %}selected{% endif %}>Electronics</option>
+                <option value="Chemicals" {% if selected_category == 'Chemicals' %}selected{% endif %}>Chemicals</option>
+                <option value="Industrial" {% if selected_category == 'Industrial' %}selected{% endif %}>Industrial</option>
+                <option value="Consumables" {% if selected_category == 'Consumables' %}selected{% endif %}>Consumables</option>
+            </select>
+
+            <button type="submit" class="btn-header-action" style="height: 38px; background: var(--primary-accent); border-color: var(--primary-accent); color: #ffffff;"><i class="fa-solid fa-filter"></i> Apply Filter</button>
+            {% if search_query or (selected_category and selected_category != 'all') or (selected_risk and selected_risk != 'all') %}
+            <a href="{{ url_for('web.inventory') }}" class="btn-header-action" style="height: 38px;" title="Reset All Filters"><i class="fa-solid fa-rotate-left"></i> Reset</a>
+            {% endif %}
+        </form>
+
+        <div class="risk-tabs" style="margin: 0;">
+            {% for r in ['all', 'Critical', 'High Risk', 'Warning', 'Safe'] %}
+            <a href="{{ url_for('web.inventory', category=selected_category, risk_level=r, search=search_query) }}" 
+               class="tab-btn {% if selected_risk == r %}active{% endif %}" style="font-size: 0.78rem; padding: 0.35rem 0.75rem;">
+                {{ r | capitalize }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Responsive Inventory Data Table -->
+    <div class="table-responsive" style="overflow-x: auto;">
+        <table class="inventory-table" style="width: 100%; min-width: 900px;">
             <thead>
                 <tr>
                     <th>Product Details</th>
                     <th>Category</th>
                     <th>Stock Level / Min</th>
-                    <th>Stockout Prediction</th>
-                    <th>Expiry Status</th>
-                    <th>Demand Trend</th>
+                    <th>Unit Price</th>
                     <th>Risk Level</th>
-                    <th>Actions</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% if products %}
                     {% for p in products %}
                     {% set stock_pct = ([(p.current_stock / (p.min_stock * 2) * 100), 100] | min) if p.min_stock > 0 else (100 if p.current_stock > 0 else 0) %}
-                    {% set stock_color = '#ef4444' if p.current_stock <= p.min_stock else '#10b981' %}
+                    {% set stock_color = '#ef4444' if p.current_stock <= p.min_stock else '#16a34a' %}
                     {% set exp_status = p.expiry_info.status if p.expiry_info else 'Good' %}
                     {% set days_stockout = p.days_to_stockout if p.days_to_stockout is defined else 999 %}
                     {% set risk_level = p.risk_level | default('Safe') %}
@@ -77,52 +88,65 @@
 
                     <tr>
                         <td>
-                            <div class="prod-cell">
-                                <div class="category-icon-box">
-                                    <i class="fa-solid {% if p.category == 'Electronics' %}fa-microchip{% elif p.category == 'Perishable' %}fa-apple-whole{% elif p.category == 'Chemicals' %}fa-flask{% elif p.category == 'Industrial' %}fa-gears{% else %}fa-box{% endif %}"></i>
+                            <div class="prod-cell" style="display: flex; align-items: center; gap: 0.75rem;">
+                                <div class="category-icon-box" style="width: 40px; height: 40px; border-radius: 8px; background: rgba(124, 58, 237, 0.12); border: 1px solid rgba(124, 58, 237, 0.25); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                    <i class="fa-solid {% if p.category == 'Electronics' %}fa-microchip{% elif p.category == 'Perishable' %}fa-apple-whole{% elif p.category == 'Chemicals' %}fa-flask{% elif p.category == 'Industrial' %}fa-gears{% else %}fa-box-open{% endif %}" style="color: var(--primary-accent);"></i>
                                 </div>
                                 <div class="prod-info">
-                                    <span class="prod-name">{{ p.name }}</span>
-                                    <span class="prod-sku">SKU: {{ p.sku }}</span>
+                                    <a href="{{ url_for('web.inventory', view_id=p._id, category=selected_category, risk_level=selected_risk, search=search_query) }}" class="prod-name" style="font-weight: 700; color: var(--text-main); text-decoration: none;">{{ p.name }}</a>
+                                    <span class="prod-sku" style="font-size: 0.75rem; color: var(--text-muted); display: block;">SKU: {{ p.sku }}</span>
                                 </div>
                             </div>
                         </td>
-                        <td><span class="badge" style="background:var(--bg-surface-hover); color:var(--text-muted); padding:0.25rem 0.5rem; border-radius:4px; font-size:0.75rem;">{{ p.category }}</span></td>
                         <td>
-                            <div style="font-weight:600;">{{ p.current_stock }} / {{ p.min_stock }} <span style="font-size:0.7rem; color:var(--text-dim);">{{ p.unit | default('Units') }}</span></div>
-                            <div class="stock-meter-bar">
+                            <span class="badge" style="background: var(--bg-surface-hover); color: var(--text-muted); padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.75rem; border: 1px solid var(--border-color);">{{ p.category }}</span>
+                        </td>
+                        <td>
+                            <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main);">
+                                {{ p.current_stock }} / {{ p.min_stock }} <span style="font-size: 0.72rem; color: var(--text-muted);">{{ p.unit | default('Units') }}</span>
+                            </div>
+                            <div class="stock-meter-bar" style="margin-top: 4px; height: 6px; border-radius: 3px; background: var(--bg-surface-hover); overflow: hidden; width: 110px;">
                                 <div class="stock-meter-fill" style="--width: {{ '%.1f'|format(stock_pct) }}%; --bg: {{ stock_color }};"></div>
                             </div>
                         </td>
                         <td>
-                            <div class="{% if days_stockout <= 3 %}text-critical-color{% else %}text-normal-color{% endif %}">
-                                {% if days_stockout <= 0 %}Out of Stock{% else %}{{ days_stockout }} days{% endif %}
-                            </div>
+                            <div style="font-weight: 700; color: var(--text-main); font-size: 0.88rem;">${{ "{:,.2f}".format(p.unit_price | default(0.0)) }}</div>
+                            <div style="font-size: 0.72rem; color: var(--text-dim);">Avg: {{ p.average_daily_usage | default(1.0) }}/day</div>
                         </td>
                         <td>
-                            <div style="font-size:0.78rem;">{{ p.expiry_date | default('--') }}</div>
-                            <span class="risk-pill {% if 'Critical' in exp_status %}Critical{% else %}Safe{% endif %}" style="font-size:0.65rem; padding:0.15rem 0.4rem; margin-top:2px;">{{ exp_status }}</span>
+                            <span class="risk-pill {{ risk_level | replace(' ', '-') }}">
+                                {{ "%.0f"|format(risk_score) }} • {{ risk_level }}
+                            </span>
                         </td>
-                        <td><span class="{% if p.demand_trend == 'Increasing' %}text-trend-increasing{% else %}text-trend-stable{% endif %}">{{ p.demand_trend | default('Stable') }}</span></td>
-                        <td><span class="risk-pill {{ risk_level | replace(' ', '-') }}">{{ "%.1f"|format(risk_score) }} - {{ risk_level }}</span></td>
                         <td>
-                            <div class="action-group">
-                                <a href="{{ url_for('web.inventory', view_id=p._id, category=selected_category, risk_level=selected_risk, search=search_query) }}" class="btn-act" title="View Details & Timeline">
+                            {% if p.current_stock <= 0 %}
+                            <span class="risk-pill Critical" style="font-size: 0.72rem;"><i class="fa-solid fa-circle-xmark"></i> Out of Stock</span>
+                            {% elif p.current_stock <= p.min_stock %}
+                            <span class="risk-pill Warning" style="font-size: 0.72rem;"><i class="fa-solid fa-triangle-exclamation"></i> Low Stock</span>
+                            {% elif p.expiry_info and p.expiry_info.is_expiring_soon %}
+                            <span class="risk-pill Warning" style="font-size: 0.72rem;"><i class="fa-solid fa-clock"></i> Expiring Soon</span>
+                            {% else %}
+                            <span class="risk-pill Safe" style="font-size: 0.72rem;"><i class="fa-solid fa-circle-check"></i> In Stock</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right;">
+                            <div class="action-group" style="display: inline-flex; gap: 0.35rem; justify-content: flex-end;">
+                                <a href="{{ url_for('web.inventory', view_id=p._id, category=selected_category, risk_level=selected_risk, search=search_query) }}" class="btn-act" title="View Details & Drawer">
                                     <i class="fa-solid fa-eye"></i> View
                                 </a>
-                                <a href="{{ url_for('web.inventory', stock_id=p._id, category=selected_category, risk_level=selected_risk, search=search_query) }}" class="btn-act" title="Stock In / Stock Out">
-                                    <i class="fa-solid fa-boxes-stacked"></i> Stock
+                                <a href="{{ url_for('web.inventory', stock_id=p._id, category=selected_category, risk_level=selected_risk, search=search_query) }}" class="btn-act" title="Perform Stock In / Stock Out">
+                                    <i class="fa-solid fa-right-left"></i> Stock
                                 </a>
-                                <a href="{{ url_for('web.inventory', history_id=p._id, category=selected_category, risk_level=selected_risk, search=search_query) }}" class="btn-act" title="View Transaction History">
-                                    <i class="fa-solid fa-clock-rotate-left"></i> History
+                                <a href="{{ url_for('web.inventory', history_id=p._id, category=selected_category, risk_level=selected_risk, search=search_query) }}" class="btn-act" title="View Transaction Audit Logs">
+                                    <i class="fa-solid fa-clock-rotate-left"></i> Audit
                                 </a>
                                 {% if session.get('user') and session['user'].get('role') == 'admin' %}
-                                <a href="{{ url_for('web.inventory', edit_id=p._id, category=selected_category, risk_level=selected_risk, search=search_query) }}" class="btn-act" title="Edit Product">
+                                <a href="{{ url_for('web.inventory', edit_id=p._id, category=selected_category, risk_level=selected_risk, search=search_query) }}" class="btn-act" title="Edit Master Product">
                                     <i class="fa-solid fa-pen"></i> Edit
                                 </a>
-                                <form action="{{ url_for('web.delete_product', product_id=p._id) }}" method="POST" style="margin:0;" onsubmit="return confirm('Are you sure you want to delete product {{ p.name }} (SKU: {{ p.sku }})?');">
-                                    <button type="submit" class="btn-act btn-act-danger" title="Delete Product">
-                                        <i class="fa-solid fa-trash"></i> Delete
+                                <form action="{{ url_for('web.delete_product', product_id=p._id) }}" method="POST" style="margin:0; display:inline;">
+                                    <button type="submit" class="btn-act btn-act-danger" title="Delete Product Item">
+                                        <i class="fa-solid fa-trash"></i>
                                     </button>
                                 </form>
                                 {% endif %}
@@ -132,11 +156,25 @@
                     {% endfor %}
                 {% else %}
                     <tr>
-                        <td colspan="8">
-                            <div class="empty-state">
-                                <i class="fa-solid fa-boxes-packing"></i>
-                                <div style="font-weight:600; color:var(--text-main);">No inventory items found</div>
-                                <div style="font-size:0.8rem;">Try clearing search query or category filters.</div>
+                        <td colspan="7" style="padding: 3rem 1rem; text-align: center;">
+                            <div class="empty-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem;">
+                                <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(124, 58, 237, 0.1); display: flex; align-items: center; justify-content: center; color: var(--primary-accent); font-size: 1.75rem; border: 1px dashed var(--primary-accent);">
+                                    <i class="fa-solid fa-boxes-packing"></i>
+                                </div>
+                                <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin: 0;">No Inventory Products Found</h4>
+                                <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0; max-width: 420px;">
+                                    No monitored items match your selected category, risk tier, or search criteria.
+                                </p>
+                                <div style="display: flex; gap: 0.6rem; margin-top: 0.5rem;">
+                                    <a href="{{ url_for('web.inventory') }}" class="btn-header-action">
+                                        <i class="fa-solid fa-rotate-left"></i> Reset Search Filters
+                                    </a>
+                                    {% if session.get('user') and session['user'].get('role') == 'admin' %}
+                                    <a href="{{ url_for('web.inventory', add_product='true') }}" class="btn-header-action" style="background: var(--primary-accent); border-color: var(--primary-accent); color: #ffffff;">
+                                        <i class="fa-solid fa-plus"></i> Add New Product
+                                    </a>
+                                    {% endif %}
+                                </div>
                             </div>
                         </td>
                     </tr>
