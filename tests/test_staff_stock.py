@@ -118,6 +118,7 @@ class TestStaffStockOperationsAndFeatures(unittest.TestCase):
         self.assertEqual(resp_css.status_code, 200)
         self.assertIn(b".demand-trend-alert", resp_css.data)
         self.assertIn(b".low-stock-alert", resp_css.data)
+        resp_css.close()
 
     def test_alert_classification(self):
         """Test exact alert type and severity classification mapping to CSS classes and colors."""

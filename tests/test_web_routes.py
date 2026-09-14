@@ -117,6 +117,7 @@ class TestServerSideWebRoutes(unittest.TestCase):
         self.assertEqual(resp_css.status_code, 200)
         self.assertIn(b".alert-item.Safe", resp_css.data)
         self.assertIn(b"border-left: 4px solid #10B981", resp_css.data)
+        resp_css.close()
 
     def test_analytics_page(self):
         self.client.post("/login", data={
