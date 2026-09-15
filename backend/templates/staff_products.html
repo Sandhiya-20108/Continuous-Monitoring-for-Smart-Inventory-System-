@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+
+{% block title %}Staff Portal | Browse Products{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+
+    <!-- Flash Notifications -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          {% if category in ['error', 'danger'] %}
+          <div class="alert alert-danger" style="padding: 0.75rem 1.25rem; margin-bottom: 1rem; border-radius: 6px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: var(--text-main); font-size: 0.9rem;">
+            <i class="fa-solid fa-triangle-exclamation" style="margin-right: 0.5rem; color: #ef4444;"></i> {{ message }}
+          </div>
+          {% else %}
+          <div class="alert alert-success" style="padding: 0.75rem 1.25rem; margin-bottom: 1rem; border-radius: 6px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--text-main); font-size: 0.9rem;">
+            <i class="fa-solid fa-circle-check" style="margin-right: 0.5rem; color: #10b981;"></i> {{ message }}
+          </div>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- Header & Breadcrumb Info -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.25rem;">
+                {{ page_title | default('Browse Product Catalog') }}
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">
+                Explore live inventory stock levels, category filters, reorder recommendations, and perform stock operations.
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.6rem;">
+            <a href="{{ url_for('web.staff_transactions') }}" class="btn-header-action">
+                <i class="fa-solid fa-receipt"></i> Recent Transactions
+            </a>
+            <a href="{{ url_for('web.staff_dashboard') }}" class="btn-header-action">
+                <i class="fa-solid fa-arrow-left"></i> Staff Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Category & Quick Filter Pills -->
+    <div class="panel card" style="margin-bottom: 1.5rem; padding: 1rem 1.25rem;">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;">
+            <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-right: 0.5rem;">Filters:</span>
+            <a href="{{ url_for('web.staff_products', category='all', filter='all') }}" class="btn-filter {% if selected_category == 'all' and filter_type == 'all' %}active{% endif %}">
+                All Products
+            </a>
+            <a href="{{ url_for('web.staff_products', filter='low_stock') }}" class="btn-filter {% if filter_type == 'low_stock' %}active{% endif %}" style="border-color: #fde68a;">
+                ⚠️ Low Stock Items
+            </a>
+            <a href="{{ url_for('web.staff_products', filter='expiring') }}" class="btn-filter {% if filter_type == 'expiring' %}active{% endif %}" style="border-color: #fecaca;">
+                ⏰ Expiring Batches
+            </a>
+            <span style="border-left: 1px solid var(--border-color); height: 20px; margin: 0 0.25rem;"></span>
+            <a href="{{ url_for('web.staff_products', category='Healthcare') }}" class="btn-filter {% if selected_category == 'Healthcare' %}active{% endif %}">
+                Healthcare
+            </a>
+            <a href="{{ url_for('web.staff_products', category='Electronics') }}" class="btn-filter {% if selected_category == 'Electronics' %}active{% endif %}">
+                Electronics
+            </a>
+            <a href="{{ url_for('web.staff_products', category='Industrial') }}" class="btn-filter {% if selected_category == 'Industrial' %}active{% endif %}">
+                Industrial
+            </a>
+            <a href="{{ url_for('web.staff_products', category='Safety & Hazmat') }}" class="btn-filter {% if selected_category == 'Safety & Hazmat' %}active{% endif %}">
+                Safety & Hazmat
+            </a>
+        </div>
+    </div>
+
+    <!-- Product Grid / Cards List -->
+    <div class="card" style="padding: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin: 0; color: var(--text-main);">
+                Available Inventory Items
+            </h3>
+            <span style="font-size: 0.85rem; color: var(--text-muted);">Showing {{ products | length }} item(s)</span>
+        </div>
+
+        {% if not products %}
+        <div class="empty-state">
+            <i class="fa-solid fa-box-open" style="font-size: 3rem; opacity: 0.5;"></i>
+            <h4 style="font-size: 1.1rem; color: var(--text-main); font-weight: 700;">No products found</h4>
+            <p style="font-size: 0.88rem; color: var(--text-muted); max-width: 400px;">No inventory items match the requested search or status filter.</p>
+            <a href="{{ url_for('web.staff_products') }}" class="btn-header-action" style="margin-top: 0.5rem; background: var(--primary-accent); border-color: var(--primary-accent); color: #fff;">Reset Filters</a>
+        </div>
+        {% else %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem;">
+            {% for product in products %}
+            <div class="product-card card" style="padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+                        <span class="badge" style="background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;">
+                            {{ product.category }}
+                        </span>
+                        
+                        <span class="risk-pill {{ product.status_label | replace(' ', '-') }}">
+                            {{ product.status_label }}
+                        </span>
+                    </div>
+
+                    <h4 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.35rem; color: var(--text-main);">
+                        {{ product.name }}
+                    </h4>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.85rem;">
+                        SKU: <code>{{ product.sku }}</code>
+                    </div>
+
+                    <!-- Reorder Recommendation Badge -->
+                    {% if product.requires_reorder %}
+                    <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 0.5rem 0.75rem; margin-bottom: 0.85rem; font-size: 0.78rem; color: #b45309;">
+                        <i class="fa-solid fa-cart-flatbed"></i> <strong>Reorder Recommendation:</strong>
+                        <div>Suggested Reorder: <strong>{{ product.recommended_reorder }} {{ product.unit | default('units') }}</strong></div>
+                        <div style="font-size: 0.72rem; opacity: 0.9;">Action: {{ product.recommended_action }}</div>
+                    </div>
+                    {% endif %}
+
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem; padding: 0.65rem 0; border-top: 1px dashed var(--border-color); border-bottom: 1px dashed var(--border-color); margin-bottom: 1rem; font-size: 0.82rem;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-muted);">Available Quantity:</span>
+                            <strong class="{{ product.status_class }}">{{ product.current_stock }} {{ product.unit | default('units') }}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-muted);">Minimum Safety Stock:</span>
+                            <span style="color: var(--text-main);">{{ product.min_stock }} {{ product.unit | default('units') }}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-muted);">Unit Price:</span>
+                            <span style="color: var(--primary-cyan); font-weight: 700;">{{ product.formatted_unit_price }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem;">
+                    <a href="?stock_id={{ product._id }}" class="btn-action" style="flex: 1; text-align: center; justify-content: center; padding: 0.5rem; font-size: 0.82rem; background: var(--primary-accent); border: 1px solid var(--primary-accent); color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem;">
+                        <i class="fa-solid fa-boxes-stacked"></i> Receive / Issue
+                    </a>
+                    <a href="{{ url_for('web.staff_product_details', product_id=product._id) }}" class="btn-action" style="text-align: center; justify-content: center; padding: 0.5rem 0.75rem; font-size: 0.82rem; background: var(--bg-surface-hover); border: 1px solid var(--border-color); color: var(--text-main); text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem;">
+                        <i class="fa-solid fa-eye"></i> Details
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Stock Operation Modal -->
+    {% include 'components/stock_modal.html' %}
+
+</div>
+{% endblock %}

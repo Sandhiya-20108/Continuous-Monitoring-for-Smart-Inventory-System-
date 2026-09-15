@@ -1,0 +1,347 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile & Security | Staff Portal{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+
+    {% set user = session.get('user', {}) %}
+    {% set can_edit_profile = can_edit_profile if can_edit_profile is defined else (user_doc.get('allow_profile_edit') if user_doc is defined and user_doc else user.get('allow_profile_edit', False)) %}
+    {% set is_editing_allowed = can_edit_profile %}
+
+    <!-- Flash Notifications -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          {% if category == 'success' %}
+          <div class="alert alert-success" style="padding: 0.85rem 1.25rem; margin-bottom: 1.5rem; border-radius: 8px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; font-size: 0.9rem; display: flex; align-items: center; gap: 0.6rem;">
+            <i class="fa-solid fa-circle-check" style="font-size: 1.1rem; color: #10b981;"></i>
+            <span>{{ message }}</span>
+          </div>
+          {% else %}
+          <div class="alert alert-danger" style="padding: 0.85rem 1.25rem; margin-bottom: 1.5rem; border-radius: 8px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; font-size: 0.9rem; display: flex; align-items: center; gap: 0.6rem;">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.1rem; color: #ef4444;"></i>
+            <span>{{ message }}</span>
+          </div>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- Clear Admin Disabled Notice Banner if Profile Editing is Disabled -->
+    {% if not can_edit_profile %}
+    <div class="alert alert-warning" style="padding: 0.9rem 1.25rem; margin-bottom: 1.5rem; border-radius: 8px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); color: #fbbf24; font-size: 0.9rem; display: flex; align-items: center; gap: 0.75rem;">
+        <i class="fa-solid fa-user-lock" style="font-size: 1.2rem; color: #f59e0b;"></i>
+        <div>
+            <strong style="display: block; font-weight: 700; color: #fbbf24;">Profile Editing Disabled</strong>
+            <span>Profile editing has been disabled by your administrator.</span>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Page Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.75rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-main, #f8fafc); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.6rem;">
+                <i class="fa-solid fa-user-shield" style="color: #10b981;"></i> Staff Account Profile & Security Center
+            </h2>
+            <p style="color: var(--text-muted, #94a3b8); font-size: 0.88rem; margin: 0;">
+                Manage your staff personal information, account credentials, and security settings.
+            </p>
+        </div>
+        <a href="{{ url_for('web.staff_dashboard') }}" class="btn-action" style="padding: 0.55rem 1.1rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color, rgba(255,255,255,0.1)); color: var(--text-main); text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 0.88rem; display: inline-flex; align-items: center; gap: 0.5rem; transition: var(--transition-fast);">
+            <i class="fa-solid fa-arrow-left"></i> Return to Staff Workspace
+        </a>
+    </div>
+
+    {% set full_name = user.get('full_name') or user.get('username') or 'Staff Member' %}
+
+    <div style="display: grid; grid-template-columns: 1fr 2.2fr; gap: 1.5rem; align-items: start;">
+        
+        <!-- LEFT COLUMN: Profile Summary & Completion -->
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            
+            <!-- 1. PROFILE SUMMARY CARD -->
+            <div class="panel" style="padding: 2rem 1.5rem; text-align: center; background: var(--bg-surface, #111827); border: 1px solid var(--border-color, rgba(255,255,255,0.08)); border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
+                <div style="width: 84px; height: 84px; border-radius: 50%; background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: #ffffff; font-size: 2.2rem; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.1rem auto; box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35); border: 3px solid rgba(16, 185, 129, 0.4);">
+                    {{ full_name[0] | upper }}
+                </div>
+                
+                <h3 style="font-size: 1.25rem; font-weight: 700; margin: 0 0 0.3rem 0; color: var(--text-main, #f8fafc);">
+                    {{ full_name }}
+                </h3>
+                <div style="font-size: 0.85rem; color: var(--text-muted, #94a3b8); margin-bottom: 1rem; word-break: break-all;">
+                    <i class="fa-solid fa-envelope" style="margin-right: 0.35rem; color: #10b981;"></i> {{ user.get('email', 'staff@inventory.com') }}
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 0.5rem; align-items: center;">
+                    <div style="display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); padding: 0.35rem 0.85rem; font-size: 0.75rem; border-radius: 20px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">
+                        <i class="fa-solid fa-id-badge"></i> Staff Account
+                    </div>
+
+                    {% if can_edit_profile %}
+                    <div style="display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); padding: 0.35rem 0.85rem; font-size: 0.75rem; border-radius: 20px; font-weight: 700;">
+                        <i class="fa-solid fa-user-pen"></i> Profile Editing Enabled
+                    </div>
+                    {% else %}
+                    <div style="display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); padding: 0.35rem 0.85rem; font-size: 0.75rem; border-radius: 20px; font-weight: 700;">
+                        <i class="fa-solid fa-lock"></i> Editing Disabled by Admin
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Profile Meta List -->
+                <div style="margin-top: 1.5rem; border-top: 1px solid var(--border-color, rgba(255,255,255,0.08)); padding-top: 1.25rem; text-align: left; font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: var(--text-muted);">Account Role:</span>
+                        <strong style="color: var(--text-main); font-weight: 600;">Staff Member</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: var(--text-muted);">Username:</span>
+                        <strong style="color: var(--text-main); font-weight: 600;">@{{ user.get('username', 'staff') }}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: var(--text-muted);">Account Status:</span>
+                        <span style="color: #34d399; font-weight: 700; display: inline-flex; align-items: center; gap: 0.3rem;">
+                            <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block;"></span> Active
+                        </span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: var(--text-muted);">Permission Setting:</span>
+                        {% if can_edit_profile %}
+                        <span style="color: #34d399; font-weight: 700;">Allowed</span>
+                        {% else %}
+                        <span style="color: #f87171; font-weight: 700;">Disabled</span>
+                        {% endif %}
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: var(--text-muted);">Last Profile Update:</span>
+                        <span style="color: var(--text-main); font-weight: 500;">
+                            {{ user.get('updated_at', '')[:10] if user.get('updated_at') else 'Recently' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. PROFILE COMPLETION CARD -->
+            <div class="panel" style="padding: 1.5rem; background: var(--bg-surface, #111827); border: 1px solid var(--border-color, rgba(255,255,255,0.08)); border-radius: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem;">
+                    <h4 style="font-size: 0.95rem; font-weight: 700; margin: 0; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fa-solid fa-chart-line" style="color: #10b981;"></i> Profile Completion
+                    </h4>
+                    <span style="font-size: 0.9rem; font-weight: 800; color: #34d399;">100%</span>
+                </div>
+                
+                <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.08); border-radius: 10px; overflow: hidden; margin-bottom: 1rem;">
+                    <div style="width: 100%; height: 100%; background: linear-gradient(90deg, #059669, #10b981); border-radius: 10px;"></div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.8rem; color: var(--text-muted);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span><i class="fa-solid fa-circle-check" style="color: #10b981; margin-right: 0.35rem;"></i> Email Address:</span>
+                        <strong style="color: #34d399;">Verified</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span><i class="fa-solid fa-lock" style="color: #10b981; margin-right: 0.35rem;"></i> Password Protection:</span>
+                        <strong style="color: #34d399;">Protected (SHA-256)</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span><i class="fa-solid fa-user-shield" style="color: #10b981; margin-right: 0.35rem;"></i> Admin Permission:</span>
+                        {% if can_edit_profile %}
+                        <strong style="color: #34d399;">Editing Allowed</strong>
+                        {% else %}
+                        <strong style="color: #f87171;">Editing Disabled</strong>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT COLUMN: Personal Information, Security & Activity Cards -->
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            
+            <form action="{{ url_for('web.update_profile') }}" method="POST" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <input type="hidden" name="user_id" value="{{ user.get('id') or user.get('_id') or '' }}">
+                
+                <!-- 3. PERSONAL INFORMATION CARD -->
+                <div class="panel" style="padding: 1.75rem; background: var(--bg-surface, #111827); border: 1px solid var(--border-color, rgba(255,255,255,0.08)); border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
+                    <div style="border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08)); padding-bottom: 1rem; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                        <div>
+                            <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0 0 0.25rem 0; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem;">
+                                <i class="fa-solid fa-id-card" style="color: #10b981;"></i> Personal Information
+                            </h3>
+                            <p style="font-size: 0.83rem; color: var(--text-muted); margin: 0;">
+                                Update your display name. Username, email address, and role are system-managed.
+                            </p>
+                        </div>
+                        {% if not can_edit_profile %}
+                        <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 12px;">
+                            <i class="fa-solid fa-lock"></i> Read-Only Mode
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+                        <!-- Full Name (Editable when permission is allowed) -->
+                        <div style="grid-column: span 2;">
+                            <label for="fullNameInput" style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.4rem;">
+                                Full Name {% if can_edit_profile %}<span style="color: #ef4444;">*</span>{% else %}<i class="fa-solid fa-lock" style="font-size: 0.75rem; margin-left: 0.25rem; color: #f87171;"></i>{% endif %}
+                            </label>
+                            <div style="position: relative;">
+                                <i class="fa-solid fa-user" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.9rem; pointer-events: none;"></i>
+                                {% if can_edit_profile %}
+                                <input type="text" id="fullNameInput" name="full_name" class="form-control" value="{{ full_name }}" required minlength="2" style="width: 100%; padding: 0.65rem 1rem 0.65rem 2.5rem; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color, rgba(255,255,255,0.12)); border-radius: 8px; color: var(--text-main); font-size: 0.9rem;">
+                                {% else %}
+                                <input type="text" id="fullNameInput" name="full_name" class="form-control" value="{{ full_name }}" readonly style="width: 100%; padding: 0.65rem 1rem 0.65rem 2.5rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; color: var(--text-muted); font-size: 0.9rem; cursor: not-allowed; opacity: 0.75;">
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Email Address (Read-Only) -->
+                        <div>
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem;">
+                                Email Address <i class="fa-solid fa-lock" style="font-size: 0.75rem; margin-left: 0.25rem; color: var(--text-dim);"></i>
+                            </label>
+                            <div style="position: relative;">
+                                <i class="fa-solid fa-envelope" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-dim); font-size: 0.9rem; pointer-events: none;"></i>
+                                <input type="email" class="form-control" value="{{ user.get('email', '') }}" readonly style="width: 100%; padding: 0.65rem 1rem 0.65rem 2.5rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; color: var(--text-muted); font-size: 0.9rem; cursor: not-allowed; opacity: 0.75;">
+                            </div>
+                            <span style="font-size: 0.73rem; color: var(--text-dim); margin-top: 0.25rem; display: block;">Contact Admin to modify registered email.</span>
+                        </div>
+
+                        <!-- Username (Read-Only) -->
+                        <div>
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem;">
+                                Username <i class="fa-solid fa-lock" style="font-size: 0.75rem; margin-left: 0.25rem; color: var(--text-dim);"></i>
+                            </label>
+                            <div style="position: relative;">
+                                <i class="fa-solid fa-at" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-dim); font-size: 0.9rem; pointer-events: none;"></i>
+                                <input type="text" class="form-control" value="{{ user.get('username', '') }}" readonly style="width: 100%; padding: 0.65rem 1rem 0.65rem 2.5rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; color: var(--text-muted); font-size: 0.9rem; cursor: not-allowed; opacity: 0.75;">
+                            </div>
+                        </div>
+
+                        <!-- Account Role (Read-Only) -->
+                        <div>
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem;">
+                                Account Role <i class="fa-solid fa-lock" style="font-size: 0.75rem; margin-left: 0.25rem; color: var(--text-dim);"></i>
+                            </label>
+                            <div style="position: relative;">
+                                <i class="fa-solid fa-user-shield" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-dim); font-size: 0.9rem; pointer-events: none;"></i>
+                                <input type="text" class="form-control" value="Staff Member" readonly style="width: 100%; padding: 0.65rem 1rem 0.65rem 2.5rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; color: var(--text-muted); font-size: 0.9rem; cursor: not-allowed; opacity: 0.75;">
+                            </div>
+                        </div>
+
+                        <!-- Account Status (Read-Only) -->
+                        <div>
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem;">
+                                Account Status <i class="fa-solid fa-lock" style="font-size: 0.75rem; margin-left: 0.25rem; color: var(--text-dim);"></i>
+                            </label>
+                            <div style="position: relative;">
+                                <i class="fa-solid fa-circle-check" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #34d399; font-size: 0.9rem; pointer-events: none;"></i>
+                                <input type="text" class="form-control" value="Active Account" readonly style="width: 100%; padding: 0.65rem 1rem 0.65rem 2.5rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; color: #34d399; font-size: 0.9rem; font-weight: 600; cursor: not-allowed; opacity: 0.85;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. ACCOUNT SECURITY CARD -->
+                <div class="panel" style="padding: 1.75rem; background: var(--bg-surface, #111827); border: 1px solid var(--border-color, rgba(255,255,255,0.08)); border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
+                    <div style="border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08)); padding-bottom: 1rem; margin-bottom: 1.25rem;">
+                        <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0 0 0.25rem 0; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fa-solid fa-shield-halved" style="color: #10b981;"></i> Account Security & Password
+                        </h3>
+                        <p style="font-size: 0.83rem; color: var(--text-muted); margin: 0;">
+                            Change your account password. Leave password fields blank if you wish to keep your current password.
+                        </p>
+                    </div>
+
+                    <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1.25rem; font-size: 0.8rem; color: #34d399; display: flex; align-items: center; gap: 0.6rem;">
+                        <i class="fa-solid fa-circle-info" style="font-size: 1rem;"></i>
+                        <span>Password Requirements: Minimum 8 characters. Password must match in both fields.</span>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+                        <!-- New Password -->
+                        <div>
+                            <label for="newPasswordInput" style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.4rem;">
+                                New Password {% if not can_edit_profile %}<i class="fa-solid fa-lock" style="font-size: 0.75rem; margin-left: 0.25rem; color: #f87171;"></i>{% endif %}
+                            </label>
+                            <div style="position: relative;">
+                                <i class="fa-solid fa-key" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.9rem; pointer-events: none;"></i>
+                                {% if can_edit_profile %}
+                                <input type="password" id="newPasswordInput" name="new_password" class="form-control" placeholder="••••••••" minlength="8" style="width: 100%; padding: 0.65rem 1rem 0.65rem 2.5rem; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color, rgba(255,255,255,0.12)); border-radius: 8px; color: var(--text-main); font-size: 0.9rem;">
+                                {% else %}
+                                <input type="password" id="newPasswordInput" name="new_password" class="form-control" placeholder="••••••••" minlength="8" readonly style="width: 100%; padding: 0.65rem 1rem 0.65rem 2.5rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; color: var(--text-muted); font-size: 0.9rem; cursor: not-allowed; opacity: 0.75;">
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Confirm New Password -->
+                        <div>
+                            <label for="confirmPasswordInput" style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.4rem;">
+                                Confirm New Password {% if not can_edit_profile %}<i class="fa-solid fa-lock" style="font-size: 0.75rem; margin-left: 0.25rem; color: #f87171;"></i>{% endif %}
+                            </label>
+                            <div style="position: relative;">
+                                <i class="fa-solid fa-check-double" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.9rem; pointer-events: none;"></i>
+                                {% if can_edit_profile %}
+                                <input type="password" id="confirmPasswordInput" name="confirm_password" class="form-control" placeholder="••••••••" minlength="8" style="width: 100%; padding: 0.65rem 1rem 0.65rem 2.5rem; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color, rgba(255,255,255,0.12)); border-radius: 8px; color: var(--text-main); font-size: 0.9rem;">
+                                {% else %}
+                                <input type="password" id="confirmPasswordInput" name="confirm_password" class="form-control" placeholder="••••••••" minlength="8" readonly style="width: 100%; padding: 0.65rem 1rem 0.65rem 2.5rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; color: var(--text-muted); font-size: 0.9rem; cursor: not-allowed; opacity: 0.75;">
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. ACTION BUTTONS -->
+                <div style="display: flex; gap: 1rem; align-items: center; justify-content: flex-end;">
+                    <a href="{{ url_for('web.staff_dashboard') }}" class="btn-action" style="padding: 0.65rem 1.25rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color, rgba(255,255,255,0.12)); color: var(--text-muted); text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 0.88rem;">
+                        Cancel
+                    </a>
+                    {% if can_edit_profile %}
+                    <button type="submit" class="btn-action" style="padding: 0.65rem 1.5rem; background: linear-gradient(135deg, #059669, #10b981); color: #ffffff; border: none; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Profile Changes
+                    </button>
+                    {% else %}
+                    <button type="button" disabled style="padding: 0.65rem 1.5rem; background: rgba(148, 163, 184, 0.1); color: #64748b; border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 8px; font-weight: 600; font-size: 0.88rem; cursor: not-allowed; display: inline-flex; align-items: center; gap: 0.5rem; opacity: 0.6;">
+                        <i class="fa-solid fa-lock"></i> Save Profile Changes (Disabled)
+                    </button>
+                    {% endif %}
+                </div>
+            </form>
+
+            <!-- 7. RECENT ACCOUNT ACTIVITY CARD -->
+            <div class="panel" style="padding: 1.5rem; background: var(--bg-surface, #111827); border: 1px solid var(--border-color, rgba(255,255,255,0.08)); border-radius: 12px;">
+                <h4 style="font-size: 0.95rem; font-weight: 700; margin: 0 0 1rem 0; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fa-solid fa-clock-rotate-left" style="color: #60a5fa;"></i> Security & Activity Audit
+                </h4>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; font-size: 0.82rem;">
+                    <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 0.75rem 1rem;">
+                        <span style="color: var(--text-muted); display: block; margin-bottom: 0.2rem;">Current Session</span>
+                        <strong style="color: #34d399; font-weight: 600;">Active Session</strong>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 0.75rem 1rem;">
+                        <span style="color: var(--text-muted); display: block; margin-bottom: 0.2rem;">Profile Last Updated</span>
+                        <strong style="color: var(--text-main); font-weight: 600;">
+                            {{ user.get('updated_at', '')[:19].replace('T', ' ') if user.get('updated_at') else 'Recently' }}
+                        </strong>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 0.75rem 1rem;">
+                        <span style="color: var(--text-muted); display: block; margin-bottom: 0.2rem;">Profile Editing Status</span>
+                        {% if is_editing_allowed %}
+                        <strong style="color: #34d399; font-weight: 600;">Allowed by Admin</strong>
+                        {% else %}
+                        <strong style="color: #f87171; font-weight: 600;">Disabled by Admin</strong>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}

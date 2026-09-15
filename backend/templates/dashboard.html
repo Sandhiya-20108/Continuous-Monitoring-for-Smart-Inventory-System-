@@ -1,0 +1,441 @@
+{% extends 'base.html' %}
+
+{% block title %}Executive Overview | Warehouse Overview | SmartShelf Guardian{% endblock %}
+
+{% block content %}
+<div class="dribbble-dashboard-container">
+
+    <!-- Overview Banner with Time-based Greeting, Current Date & Overall Inventory Health Score -->
+    <div class="dribbble-header-banner" style="display: flex; justify-content: space-between; align-items: center; background: #111C2E; border: 1px solid #263449; border-radius: 16px; padding: 1.25rem 1.5rem;">
+        <div>
+            <h2 style="font-size: 1.3rem; font-weight: 700; color: #F8FAFC;">{{ greeting }}, {{ session.get('user', {}).get('full_name', 'Administrator') }}</h2>
+            <p class="text-muted" style="font-size: 0.85rem; margin-top: 0.2rem;">{{ current_date }} &bull; Real-time continuous telemetry monitoring active.</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 1.5rem;">
+            <div style="text-align: right;">
+                <div style="font-size: 0.74rem; text-transform: uppercase; font-weight: 700; color: var(--secondary-teal, #14B8A6); letter-spacing: 0.05em;">Overall Inventory Health</div>
+                <div style="font-size: 1.45rem; font-weight: 800; color: #F8FAFC;">{{ "%.0f"|format(metrics.health_score | default(100.0)) }}%</div>
+            </div>
+            <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(20, 184, 166, 0.15); border: 1px solid #14B8A6; display: flex; align-items: center; justify-content: center; color: #14B8A6; font-size: 1.2rem;">
+                <i class="fa-solid fa-heart-pulse"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top KPI Cards Grid (4 Cards matching Dribbble visual reference) -->
+    <div class="dribbble-kpi-grid">
+        <!-- KPI 1: Total Items -->
+        <div class="dribbble-kpi-card card-cyan">
+            <div class="kpi-top-row">
+                <div class="kpi-icon-box box-teal">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                </div>
+                <span class="kpi-trend-badge trend-up">
+                    <i class="fa-solid fa-arrow-trend-up"></i> +12.4%
+                </span>
+            </div>
+            <div class="kpi-meta-label">Total items</div>
+            <div class="kpi-main-number">{{ metrics.total_products | default(0) }}</div>
+        </div>
+
+        <!-- KPI 2: In Stock -->
+        <div class="dribbble-kpi-card card-green">
+            <div class="kpi-top-row">
+                <div class="kpi-icon-box box-green">
+                    <i class="fa-solid fa-box-open"></i>
+                </div>
+                <span class="kpi-trend-badge trend-up">
+                    <i class="fa-solid fa-arrow-trend-up"></i> +8.1%
+                </span>
+            </div>
+            <div class="kpi-meta-label">In stock</div>
+            <div class="kpi-main-number">{{ metrics.counts.safe | default(0) }}</div>
+        </div>
+
+        <!-- KPI 3: Low Stock -->
+        <div class="dribbble-kpi-card card-gold">
+            <div class="kpi-top-row">
+                <div class="kpi-icon-box box-gold">
+                    <i class="fa-solid fa-box-archive"></i>
+                </div>
+                <span class="kpi-trend-badge trend-down">
+                    <i class="fa-solid fa-arrow-trend-down"></i> -3.6%
+                </span>
+            </div>
+            <div class="kpi-meta-label">Low stock</div>
+            <div class="kpi-main-number">{{ metrics.counts.low_stock | default(0) }}</div>
+        </div>
+
+        <!-- KPI 4: Pending Reorders / Critical Risk -->
+        <div class="dribbble-kpi-card card-purple">
+            <div class="kpi-top-row">
+                <div class="kpi-icon-box box-purple">
+                    <i class="fa-solid fa-rotate"></i>
+                </div>
+                <span class="kpi-trend-badge trend-up">
+                    <i class="fa-solid fa-arrow-trend-up"></i> +5.9%
+                </span>
+            </div>
+            <div class="kpi-meta-label">Pending reorders</div>
+            <div class="kpi-main-number">{{ (metrics.counts.low_stock | default(0)) + (metrics.counts.critical | default(0)) }}</div>
+        </div>
+    </div>
+
+    <!-- Main Analytics Grid (Stock Movement Flow Map + Top Categories Concentration) -->
+    <div class="dribbble-analytics-grid">
+        
+        <!-- Stock Movement Wave Card (Multi-layer wave chart) -->
+        <div class="dribbble-card analytics-flow-card">
+            <div class="card-header-flex">
+                <div>
+                    <h3 class="card-title-heading">Stock movement</h3>
+                    <p class="card-sub-heading">Flow map: inbound, outbound and current load</p>
+                </div>
+                
+                <!-- Zero-JS Time Range Form -->
+                <form method="GET" action="{{ url_for('web.dashboard') }}" class="time-range-form">
+                    {% if selected_month %}
+                        <input type="hidden" name="month" value="{{ selected_month }}">
+                    {% endif %}
+                    <div class="time-select-pill">
+                        <select name="range" class="time-select-dropdown" aria-label="Select Time Range">
+                            <option value="3" {% if selected_range == 3 %}selected{% endif %}>3 months</option>
+                            <option value="6" {% if selected_range == 6 %}selected{% endif %}>6 months</option>
+                            <option value="9" {% if selected_range == 9 %}selected{% endif %}>9 months</option>
+                            <option value="12" {% if selected_range == 12 %}selected{% endif %}>12 months</option>
+                        </select>
+                        <button type="submit" class="btn-time-apply" title="Apply time range">Apply</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Inbound / Outbound / Load Stats Row & Legend -->
+            <div class="flow-stats-row">
+                <div class="flow-stat-pill pill-inbound">
+                    <span class="pill-dot dot-gold"></span>
+                    <span class="pill-label">Inbound</span>
+                    <strong class="pill-value">+{{ stock_movement.inbound_total }}</strong>
+                </div>
+                <div class="flow-stat-pill pill-outbound">
+                    <span class="pill-dot dot-teal"></span>
+                    <span class="pill-label">Outbound</span>
+                    <strong class="pill-value">-{{ stock_movement.outbound_total }}</strong>
+                </div>
+                <div class="flow-stat-pill pill-load">
+                    <span class="pill-dot dot-purple"></span>
+                    <span class="pill-label">Current Load</span>
+                    <strong class="pill-value">{{ stock_movement.load_total }}</strong>
+                </div>
+            </div>
+
+            <!-- Multi-layer SVG Wave Chart Visualization -->
+            <div class="flow-chart-container">
+                <div class="flow-svg-wrapper">
+                    <svg class="flow-wave-svg-canvas" viewBox="0 0 800 180" preserveAspectRatio="none">
+                        <defs>
+                            <!-- Inbound Gold Gradient -->
+                            <linearGradient id="inboundGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#D4A72C" stop-opacity="0.40"/>
+                                <stop offset="100%" stop-color="#D4A72C" stop-opacity="0.01"/>
+                            </linearGradient>
+                            <!-- Outbound Teal Gradient -->
+                            <linearGradient id="outboundGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#14B8A6" stop-opacity="0.35"/>
+                                <stop offset="100%" stop-color="#14B8A6" stop-opacity="0.01"/>
+                            </linearGradient>
+                            <!-- Load Purple Gradient -->
+                            <linearGradient id="loadGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#7C3AED" stop-opacity="0.25"/>
+                                <stop offset="100%" stop-color="#7C3AED" stop-opacity="0.0"/>
+                            </linearGradient>
+                        </defs>
+
+                        <!-- Background Grid Lines -->
+                        <line x1="0" y1="40" x2="800" y2="40" class="svg-grid-line" />
+                        <line x1="0" y1="90" x2="800" y2="90" class="svg-grid-line" />
+                        <line x1="0" y1="140" x2="800" y2="140" class="svg-grid-line" />
+
+                        {% if stock_movement.has_transactions %}
+                            <!-- Wave Area Fills -->
+                            <path d="{{ stock_movement.load_area }}" fill="url(#loadGrad)" />
+                            <path d="{{ stock_movement.inbound_area }}" fill="url(#inboundGrad)" />
+                            <path d="{{ stock_movement.outbound_area }}" fill="url(#outboundGrad)" />
+
+                            <!-- Wave Curves (Strokes) -->
+                            <path d="{{ stock_movement.load_curve }}" fill="none" stroke="#A855F7" stroke-width="2" stroke-linecap="round" />
+                            <path d="{{ stock_movement.inbound_curve }}" fill="none" stroke="#D4A72C" stroke-width="3" stroke-linecap="round" />
+                            <path d="{{ stock_movement.outbound_curve }}" fill="none" stroke="#14B8A6" stroke-width="2.5" stroke-dasharray="6,4" />
+
+                            <!-- Highlight Data Points -->
+                            {% for m in stock_movement.month_data %}
+                                <circle cx="{{ m.x }}" cy="{{ m.inbound_y }}" r="4.5" fill="#0F172A" stroke="#D4A72C" stroke-width="2.5" />
+                                <circle cx="{{ m.x }}" cy="{{ m.outbound_y }}" r="4" fill="#0F172A" stroke="#14B8A6" stroke-width="2" />
+                            {% endfor %}
+                        {% endif %}
+                    </svg>
+                </div>
+
+                <!-- Month Labels Axis with Clickable Month Links (Zero JS) -->
+                <div class="flow-months-axis {% if selected_range == 12 %}axis-dense{% endif %}">
+                    {% for m in stock_movement.month_data %}
+                        <a href="{{ url_for('web.dashboard', range=selected_range, month=m.year_month) }}"
+                           class="month-axis-link {% if m.is_active %}active-month{% endif %}"
+                           title="Click to view {{ m.full_label }} telemetry">
+                            {{ m.name }}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Categories Concentration Card -->
+        <div class="dribbble-card analytics-radial-card">
+            <div class="card-header-flex">
+                <div>
+                    <h3 class="card-title-heading">Top categories</h3>
+                    <p class="card-sub-heading">Category-wise stock distribution</p>
+                </div>
+                <div class="header-icon-badge">
+                    <i class="fa-solid fa-chart-pie text-teal"></i>
+                </div>
+            </div>
+
+            {% if top_categories.has_data %}
+            <div class="categories-panel-layout">
+                <!-- SVG Donut Chart with Center Summary -->
+                <div class="donut-chart-wrapper">
+                    <svg class="donut-svg" viewBox="0 0 160 160">
+                        <!-- Background Base Circle -->
+                        <circle cx="80" cy="80" r="60" fill="none" stroke="#1E293B" stroke-width="16" />
+                        
+                        <!-- Category Donut Arcs -->
+                        {% for cat in top_categories.categories %}
+                            <circle cx="80" cy="80" r="60" fill="none" stroke="{{ cat.color }}" stroke-width="16"
+                                    stroke-dasharray="{{ cat.dash_array }}"
+                                    stroke-dashoffset="{{ cat.dash_offset }}"
+                                    transform="rotate(-90 80 80)"
+                                    class="donut-segment" />
+                        {% endfor %}
+                    </svg>
+                    
+                    <!-- Donut Center Content -->
+                    <div class="donut-center-content">
+                        <div class="donut-center-number">{{ top_categories.total_stock }}</div>
+                        <div class="donut-center-label">TOTAL UNITS</div>
+                        <div class="donut-center-tag"><i class="fa-solid fa-crown text-gold"></i> {{ top_categories.top_category_name }}</div>
+                    </div>
+                </div>
+
+                <!-- Categories List Grid / Legend -->
+                <div class="category-legend-grid">
+                    {% for cat in top_categories.categories %}
+                    <div class="category-item-card {% if cat.is_top %}top-category-highlight{% endif %}">
+                        <div class="cat-item-left">
+                            <span class="cat-color-indicator" style="background-color: {{ cat.color }}; box-shadow: 0 0 8px {{ cat.color }};"></span>
+                            <div class="cat-item-info">
+                                <div class="cat-item-name">
+                                    {{ cat.name }}
+                                    {% if cat.is_top %}
+                                        <span class="peak-badge">PEAK</span>
+                                    {% endif %}
+                                </div>
+                                <div class="cat-item-sub">{{ cat.count }} SKU{% if cat.count != 1 %}s{% endif %}</div>
+                            </div>
+                        </div>
+                        <div class="cat-item-right">
+                            <div class="cat-item-stock">{{ cat.stock }}</div>
+                            <div class="cat-item-pct">{{ cat.percentage }}%</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <!-- Empty State -->
+            <div class="categories-empty-state">
+                <i class="fa-solid fa-boxes-packing text-muted font-2rem"></i>
+                <p>No inventory categories recorded yet.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Inventory List Section -->
+    <div class="dribbble-card inventory-list-card">
+        <div class="card-header-flex">
+            <div>
+                <h3 class="card-title-heading">Inventory list</h3>
+                <p class="card-sub-heading">Live stock status across warehouse zones</p>
+            </div>
+            <div class="header-action-group">
+                <a href="{{ url_for('web.inventory') }}" class="btn-dribbble-outline">
+                    <i class="fa-solid fa-filter"></i> Filter
+                </a>
+                <a href="{{ url_for('web.export_report') }}" class="btn-dribbble-outline">
+                    <i class="fa-solid fa-download"></i> Export
+                </a>
+            </div>
+        </div>
+
+        <!-- Inventory Data Table -->
+        <div class="table-responsive" style="margin-top: 1rem;">
+            <table class="dribbble-table">
+                <thead>
+                    <tr>
+                        <th>SKU</th>
+                        <th>PRODUCT</th>
+                        <th>CATEGORY</th>
+                        <th>STOCK</th>
+                        <th>STATUS</th>
+                        <th>LOCATION / RISK</th>
+                        <th>ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if products %}
+                        {% for p in products[:8] %}
+                        <tr>
+                            <td class="sku-cell">
+                                <i class="fa-solid fa-barcode text-dim"></i>
+                                <span>{{ p.sku or ('SKU-' ~ p._id[:6]|upper) }}</span>
+                            </td>
+                            <td class="product-cell">
+                                <div class="product-thumb">
+                                    <i class="fa-solid fa-box-archive"></i>
+                                </div>
+                                <span class="product-name">{{ p.name }}</span>
+                            </td>
+                            <td>
+                                <span class="category-tag">{{ p.category or 'General' }}</span>
+                            </td>
+                            <td>
+                                <strong class="stock-qty">{{ p.current_stock }}</strong>
+                            </td>
+                            <td>
+                                {% if p.current_stock <= (p.critical_stock or 5) %}
+                                    <span class="pill-badge pill-critical">Critical</span>
+                                {% elif p.current_stock <= (p.min_stock or 10) %}
+                                    <span class="pill-badge pill-low">Low Stock</span>
+                                {% else %}
+                                    <span class="pill-badge pill-healthy">Healthy</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="location-text"><i class="fa-solid fa-location-dot"></i> Zone {{ loop.index }}-A</span>
+                            </td>
+                            <td>
+                                <div class="action-menu-dots">
+                                    <a href="{{ url_for('web.inventory', search=p.name) }}" title="View Details" class="btn-table-action">
+                                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted" style="padding: 2rem;">
+                                No inventory items found in database.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Lower Grid: Demand Simulator & Recent Activity Log -->
+    <div class="dribbble-lower-grid">
+        
+        <!-- Smart Demand Simulator -->
+        <div class="dribbble-card">
+            <div class="card-header-flex" style="margin-bottom: 1rem;">
+                <div>
+                    <h3 class="card-title-heading"><i class="fa-solid fa-sliders text-teal"></i> Demand Simulator</h3>
+                    <p class="card-sub-heading">Predict future stockout risk score</p>
+                </div>
+            </div>
+
+            <form action="{{ url_for('web.dashboard') }}" method="GET" class="sim-form-container">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label class="form-label" for="simProductSelect">Target Inventory Item:</label>
+                    <select id="simProductSelect" name="sim_product_id" class="form-control">
+                        {% for p in products %}
+                        <option value="{{ p._id }}" {% if selected_sim_product and selected_sim_product._id == p._id %}selected{% endif %}>
+                            {{ p.name }} (Stock: {{ p.current_stock }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="sim-slider-block" style="margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.3rem;">
+                        <span class="text-muted">Demand Variance:</span>
+                        <strong class="text-purple">{% if sim_demand_change_pct >= 0 %}+{% endif %}{{ sim_demand_change_pct }}%</strong>
+                    </div>
+                    <input type="range" name="sim_demand_change_pct" min="-50" max="200" step="10" value="{{ sim_demand_change_pct }}" style="width: 100%;">
+                </div>
+
+                <button type="submit" class="btn-royal-purple btn-block" style="margin-bottom: 1rem;">
+                    <i class="fa-solid fa-calculator"></i> Run Demand Simulation
+                </button>
+
+                {% if sim_result %}
+                <div class="sim-results-card">
+                    <div class="sim-res-row"><span>Adjusted Daily Usage:</span><strong>{{ sim_result.adjusted_daily_usage }} units/day</strong></div>
+                    <div class="sim-res-row"><span>Days to Stockout:</span><strong class="text-gold">{{ sim_result.new_days_to_stockout }} days</strong></div>
+                    <div class="sim-res-row"><span>Suggested Reorder:</span><strong class="text-safe">{{ sim_result.suggested_reorder_qty }} units</strong></div>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+
+        <!-- Recent Activity Audit Log -->
+        <div class="dribbble-card">
+            <div class="card-header-flex" style="margin-bottom: 1rem;">
+                <div>
+                    <h3 class="card-title-heading"><i class="fa-solid fa-clock-rotate-left text-purple"></i> Recent Activity</h3>
+                    <p class="card-sub-heading">Real-time inventory transactions & stock updates</p>
+                </div>
+            </div>
+
+            <div class="recent-activity-list">
+                {% if recent_transactions %}
+                    {% for tx in recent_transactions %}
+                    <div class="activity-item">
+                        <div class="activity-icon {% if tx.transaction_type == 'restock' %}icon-safe{% else %}icon-gold{% endif %}">
+                            <i class="fa-solid {% if tx.transaction_type == 'restock' %}fa-arrow-down{% else %}fa-arrow-up{% endif %}"></i>
+                        </div>
+                        <div class="activity-info">
+                            <strong class="activity-prod">{{ tx.product_name or tx.product_id }}</strong>
+                            <span class="activity-meta">{{ tx.performed_by or 'Admin' }} &bull; {{ tx.timestamp | format_date }}</span>
+                        </div>
+                        <div class="activity-qty {% if tx.transaction_type == 'restock' %}text-safe{% else %}text-gold{% endif %}">
+                            {% if tx.transaction_type == 'restock' %}+{% else %}-{% endif %}{{ tx.quantity or tx.new_stock }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="activity-item">
+                        <div class="activity-icon icon-safe"><i class="fa-solid fa-arrow-down"></i></div>
+                        <div class="activity-info">
+                            <strong class="activity-prod">Paracetamol 500mg</strong>
+                            <span class="activity-meta">Staff &bull; Stock Received</span>
+                        </div>
+                        <div class="activity-qty text-safe">+50</div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-icon icon-gold"><i class="fa-solid fa-arrow-up"></i></div>
+                        <div class="activity-info">
+                            <strong class="activity-prod">Surgical Nitrile Gloves</strong>
+                            <span class="activity-meta">Staff &bull; Stock Issued</span>
+                        </div>
+                        <div class="activity-qty text-gold">-12</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

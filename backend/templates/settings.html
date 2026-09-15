@@ -1,0 +1,888 @@
+{% extends 'base.html' %}
+
+{% block title %}Enterprise Settings Center - Smart Inventory System{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Settings Center Header Banner -->
+    <div class="settings-header-banner">
+        <div class="settings-header-content">
+            <div class="settings-header-title">
+                <div class="settings-header-icon-wrapper">
+                    <i class="fa-solid fa-gears settings-header-icon"></i>
+                </div>
+                <div>
+                    <h2 class="settings-title-heading">Enterprise Settings Center</h2>
+                    <p class="settings-title-sub">Configure store parameters, inventory telemetry rules, notifications, RBAC, and inspect audit logs.</p>
+                </div>
+            </div>
+            <div class="settings-header-badges">
+                <span class="settings-badge-gold">
+                    <i class="fa-solid fa-shield-halved"></i> Admin Restricted Access
+                </span>
+                <span class="settings-badge-navy">
+                    <i class="fa-solid fa-circle-check"></i> System Operational
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Settings Grid Layout -->
+    <div class="settings-layout">
+        <!-- Left Side Settings Navigation -->
+        <nav class="settings-nav" aria-label="Settings Navigation">
+            <div class="settings-nav-header">
+                <i class="fa-solid fa-sliders"></i>
+                <span>Configuration Sections</span>
+            </div>
+            <a href="{{ url_for('web.admin_settings', section='general') }}" class="settings-nav-item {% if section == 'general' %}active{% endif %}">
+                <i class="fa-solid fa-store nav-icon"></i>
+                <div class="nav-text">
+                    <span class="nav-label">General Settings</span>
+                    <span class="nav-desc">Store info, currency & timezone</span>
+                </div>
+            </a>
+            <a href="{{ url_for('web.admin_settings', section='inventory_rules') }}" class="settings-nav-item {% if section == 'inventory_rules' %}active{% endif %}">
+                <i class="fa-solid fa-boxes-stacked nav-icon"></i>
+                <div class="nav-text">
+                    <span class="nav-label">Inventory Rules</span>
+                    <span class="nav-desc">Stock thresholds & monitoring</span>
+                </div>
+            </a>
+            <a href="{{ url_for('web.admin_settings', section='notifications') }}" class="settings-nav-item {% if section == 'notifications' %}active{% endif %}">
+                <i class="fa-solid fa-bell nav-icon"></i>
+                <div class="nav-text">
+                    <span class="nav-label">Notification Settings</span>
+                    <span class="nav-desc">Alert channels & daily summary</span>
+                </div>
+            </a>
+            <a href="{{ url_for('web.admin_settings', section='staff_permissions') }}" class="settings-nav-item {% if section == 'staff_permissions' %}active{% endif %}">
+                <i class="fa-solid fa-users-gear nav-icon"></i>
+                <div class="nav-text">
+                    <span class="nav-label">Staff & Permissions</span>
+                    <span class="nav-desc">Manage staff roles & access</span>
+                </div>
+            </a>
+            <a href="{{ url_for('web.admin_settings', section='security') }}" class="settings-nav-item {% if section == 'security' %}active{% endif %}">
+                <i class="fa-solid fa-shield-cat nav-icon"></i>
+                <div class="nav-text">
+                    <span class="nav-label">Security</span>
+                    <span class="nav-desc">Password, sessions & timeout</span>
+                </div>
+            </a>
+            <a href="{{ url_for('web.admin_settings', section='audit_logs') }}" class="settings-nav-item {% if section == 'audit_logs' %}active{% endif %}">
+                <i class="fa-solid fa-clock-rotate-left nav-icon"></i>
+                <div class="nav-text">
+                    <span class="nav-label">Audit Logs</span>
+                    <span class="nav-desc">Activity trail & log history</span>
+                </div>
+            </a>
+            <a href="{{ url_for('web.admin_settings', section='backup_export') }}" class="settings-nav-item {% if section == 'backup_export' %}active{% endif %}">
+                <i class="fa-solid fa-database nav-icon"></i>
+                <div class="nav-text">
+                    <span class="nav-label">Backup & Export</span>
+                    <span class="nav-desc">CSV downloads & backup status</span>
+                </div>
+            </a>
+            <a href="{{ url_for('web.admin_settings', section='appearance') }}" class="settings-nav-item {% if section == 'appearance' %}active{% endif %}">
+                <i class="fa-solid fa-palette nav-icon"></i>
+                <div class="nav-text">
+                    <span class="nav-label">Appearance</span>
+                    <span class="nav-desc">Theme, layout & preview</span>
+                </div>
+            </a>
+            <a href="{{ url_for('web.admin_settings', section='system_info') }}" class="settings-nav-item {% if section == 'system_info' %}active{% endif %}">
+                <i class="fa-solid fa-circle-info nav-icon"></i>
+                <div class="nav-text">
+                    <span class="nav-label">System Information</span>
+                    <span class="nav-desc">App version, health & metrics</span>
+                </div>
+            </a>
+        </nav>
+
+        <!-- Right Side Content Panel -->
+        <main class="settings-content">
+
+            <!-- SECTION 1: GENERAL SETTINGS -->
+            {% if section == 'general' %}
+            <div class="settings-card">
+                <div class="settings-card-header">
+                    <div class="card-title-group">
+                        <i class="fa-solid fa-store card-header-icon"></i>
+                        <div>
+                            <h3>General Store Settings</h3>
+                            <p class="card-subtitle">Manage store identity, contact info, primary currency, and localization preferences.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ url_for('web.admin_settings', section='general') }}" class="settings-form">
+                    <input type="hidden" name="action_type" value="general">
+
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label class="form-label" for="store_name">Store / Company Name</label>
+                            <input type="text" id="store_name" name="store_name" class="form-control" value="{{ session.get('store_name', 'SmartShelf Guardian') }}" required>
+                            <span class="form-help">Displayed in executive reports and staff notifications.</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="contact_email">Contact Support Email</label>
+                            <input type="email" id="contact_email" name="contact_email" class="form-control" value="{{ session.get('contact_email', 'admin@smartshelfguardian.com') }}" required>
+                            <span class="form-help">System alerts and critical notifications are delivered here.</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="phone">Phone Number</label>
+                            <input type="text" id="phone" name="phone" class="form-control" value="{{ session.get('phone', '+1 (800) 555-0199') }}">
+                            <span class="form-help">Warehouse operations primary contact.</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="currency">Primary Currency</label>
+                            <select id="currency" name="currency" class="form-control">
+                                <option value="USD ($)" {% if session.get('currency', 'USD ($)') == 'USD ($)' %}selected{% endif %}>USD ($) - US Dollar</option>
+                                <option value="EUR (€)" {% if session.get('currency') == 'EUR (€)' %}selected{% endif %}>EUR (€) - Euro</option>
+                                <option value="GBP (£)" {% if session.get('currency') == 'GBP (£)' %}selected{% endif %}>GBP (£) - British Pound</option>
+                                <option value="INR (₹)" {% if session.get('currency') == 'INR (₹)' %}selected{% endif %}>INR (₹) - Indian Rupee</option>
+                            </select>
+                            <span class="form-help">Used for total inventory valuation calculation.</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="date_format">Date Format</label>
+                            <select id="date_format" name="date_format" class="form-control">
+                                <option value="YYYY-MM-DD" {% if session.get('date_format', 'YYYY-MM-DD') == 'YYYY-MM-DD' %}selected{% endif %}>YYYY-MM-DD (ISO standard)</option>
+                                <option value="DD-MM-YYYY" {% if session.get('date_format') == 'DD-MM-YYYY' %}selected{% endif %}>DD-MM-YYYY</option>
+                                <option value="MM-DD-YYYY" {% if session.get('date_format') == 'MM-DD-YYYY' %}selected{% endif %}>MM-DD-YYYY</option>
+                                <option value="DD/MM/YYYY" {% if session.get('date_format') == 'DD/MM/YYYY' %}selected{% endif %}>DD/MM/YYYY</option>
+                                <option value="MM/DD/YYYY" {% if session.get('date_format') == 'MM/DD/YYYY' %}selected{% endif %}>MM/DD/YYYY</option>
+                                <option value="DD MMM YYYY" {% if session.get('date_format') == 'DD MMM YYYY' %}selected{% endif %}>DD MMM YYYY</option>
+                            </select>
+                            <span class="form-help">Standard date format across all Admin dashboards & reports.</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="timezone">Time Zone</label>
+                            <select id="timezone" name="timezone" class="form-control">
+                                <option value="UTC" {% if session.get('timezone', 'UTC') == 'UTC' %}selected{% endif %}>UTC - Universal Time Coordinated</option>
+                                <option value="EST (UTC-5)" {% if session.get('timezone') == 'EST (UTC-5)' %}selected{% endif %}>EST - Eastern Standard Time</option>
+                                <option value="PST (UTC-8)" {% if session.get('timezone') == 'PST (UTC-8)' %}selected{% endif %}>PST - Pacific Standard Time</option>
+                                <option value="IST (UTC+5:30)" {% if session.get('timezone') == 'IST (UTC+5:30)' %}selected{% endif %}>IST - Indian Standard Time</option>
+                                <option value="GMT (UTC+0)" {% if session.get('timezone') == 'GMT (UTC+0)' %}selected{% endif %}>GMT - Greenwich Mean Time</option>
+                            </select>
+                            <span class="form-help">Used for automated daily backup logs & timestamps.</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label class="form-label" for="address">Warehouse HQ Address</label>
+                        <textarea id="address" name="address" class="form-control" rows="3">{{ session.get('address', 'Enterprise HQ Warehouse 101, Tech Park, Suite 400') }}</textarea>
+                        <span class="form-help">Physical address for dispatch notes and supply chain records.</span>
+                    </div>
+
+                    <div class="settings-form-actions">
+                        <button type="submit" class="btn btn-royal-purple">
+                            <i class="fa-solid fa-floppy-disk"></i> Save General Settings
+                        </button>
+                        <a href="{{ url_for('web.admin_settings', section='general') }}" class="btn btn-secondary-outline">
+                            <i class="fa-solid fa-arrow-rotate-left"></i> Reset
+                        </a>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+
+            <!-- SECTION 2: INVENTORY RULES -->
+            {% if section == 'inventory_rules' %}
+            <div class="settings-card">
+                <div class="settings-card-header">
+                    <div class="card-title-group">
+                        <i class="fa-solid fa-boxes-stacked card-header-icon"></i>
+                        <div>
+                            <h3>Inventory Telemetry Rules & Thresholds</h3>
+                            <p class="card-subtitle">Define automated monitoring rules for low stock, reorder quantities, and risk triggers.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ url_for('web.admin_settings', section='inventory_rules') }}" class="settings-form">
+                    <input type="hidden" name="action_type" value="inventory_rules">
+
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label class="form-label" for="default_min_stock">Default Minimum Stock Level</label>
+                            <input type="number" id="default_min_stock" name="default_min_stock" class="form-control" value="{{ session.get('default_min_stock', 10) }}" min="1" required>
+                            <span class="form-help">Applied automatically to new items added without explicit threshold.</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="low_stock_threshold">Low-Stock Warning Threshold</label>
+                            <input type="number" id="low_stock_threshold" name="low_stock_threshold" class="form-control" value="{{ session.get('low_stock_threshold', 15) }}" min="1" required>
+                            <span class="form-help">Triggers low-stock warning badges across executive dashboards.</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="critical_stock_threshold">Critical-Stock Risk Threshold</label>
+                            <input type="number" id="critical_stock_threshold" name="critical_stock_threshold" class="form-control" value="{{ session.get('critical_stock_threshold', 5) }}" min="0" required>
+                            <span class="form-help">Triggers high-priority burgundy emergency restock alerts.</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="default_reorder_qty">Default Reorder Quantity</label>
+                            <input type="number" id="default_reorder_qty" name="default_reorder_qty" class="form-control" value="{{ session.get('default_reorder_qty', 50) }}" min="1" required>
+                            <span class="form-help">Suggested restock amount in quick restock actions.</span>
+                        </div>
+                    </div>
+
+                    <div class="settings-toggle-group">
+                        <h4 class="toggle-group-title">Automated Monitoring Modules</h4>
+                        
+                        <div class="toggle-item">
+                            <div class="toggle-info">
+                                <span class="toggle-label">Expiry Monitoring & Alerting</span>
+                                <span class="toggle-help">Automatically flag items nearing expiration date within 30 days.</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" name="expiry_monitoring" {% if session.get('expiry_monitoring', True) %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-item">
+                            <div class="toggle-info">
+                                <span class="toggle-label">Overstock Monitoring</span>
+                                <span class="toggle-help">Detect inventory items exceeding 300% of maximum target stock.</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" name="overstock_monitoring" {% if session.get('overstock_monitoring', True) %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-item">
+                            <div class="toggle-info">
+                                <span class="toggle-label">Unusual Movement & Anomaly Detection</span>
+                                <span class="toggle-help">Alert admins when stock depletion rate exceeds 200% daily average.</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" name="unusual_movement_monitoring" {% if session.get('unusual_movement_monitoring', True) %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-form-actions">
+                        <button type="submit" class="btn btn-royal-purple">
+                            <i class="fa-solid fa-floppy-disk"></i> Save Telemetry Rules
+                        </button>
+                        <a href="{{ url_for('web.admin_settings', section='inventory_rules') }}" class="btn btn-secondary-outline">
+                            <i class="fa-solid fa-arrow-rotate-left"></i> Reset
+                        </a>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+
+            <!-- SECTION 3: NOTIFICATION SETTINGS -->
+            {% if section == 'notifications' %}
+            <div class="settings-card">
+                <div class="settings-card-header">
+                    <div class="card-title-group">
+                        <i class="fa-solid fa-bell card-header-icon"></i>
+                        <div>
+                            <h3>Notification Preferences & Alerts</h3>
+                            <p class="card-subtitle">Control real-time notifications, daily email summaries, and staff audit activity alerts.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ url_for('web.admin_settings', section='notifications') }}" class="settings-form">
+                    <input type="hidden" name="action_type" value="notifications">
+
+                    <div class="settings-toggle-group">
+                        <h4 class="toggle-group-title">Real-Time Alert Subscriptions</h4>
+
+                        <div class="toggle-item">
+                            <div class="toggle-info">
+                                <span class="toggle-label">Low-Stock Alerts</span>
+                                <span class="toggle-help">Notify when any product drops below minimum threshold.</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" name="notify_low_stock" {% if session.get('notify_low_stock', True) %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-item">
+                            <div class="toggle-info">
+                                <span class="toggle-label">Critical-Risk Alerts</span>
+                                <span class="toggle-help">Immediate notification when item stock reaches zero or critical risk.</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" name="notify_critical_risk" {% if session.get('notify_critical_risk', True) %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-item">
+                            <div class="toggle-info">
+                                <span class="toggle-label">Expiry Warnings</span>
+                                <span class="toggle-help">Receive alerts for perishable products nearing expiry.</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" name="notify_expiry" {% if session.get('notify_expiry', True) %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-item">
+                            <div class="toggle-info">
+                                <span class="toggle-label">Automated Reorder Reminders</span>
+                                <span class="toggle-help">Send weekly reorder suggestions for items requiring restock.</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" name="notify_reorder" {% if session.get('notify_reorder', True) %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-item">
+                            <div class="toggle-info">
+                                <span class="toggle-label">Staff Operations & Audit Alerts</span>
+                                <span class="toggle-help">Notify admin when staff members add products or clear alerts.</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" name="notify_staff_activity" {% if session.get('notify_staff_activity', True) %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 1.5rem;">
+                        <label class="form-label" for="daily_summary_pref">Daily Executive Summary Preference</label>
+                        <select id="daily_summary_pref" name="daily_summary_pref" class="form-control">
+                            <option value="Dashboard Feed & Email" {% if session.get('daily_summary_pref', 'Dashboard Feed & Email') == 'Dashboard Feed & Email' %}selected{% endif %}>Dashboard Feed & Email (Recommended)</option>
+                            <option value="Dashboard Feed Only" {% if session.get('daily_summary_pref') == 'Dashboard Feed Only' %}selected{% endif %}>Dashboard Feed Only</option>
+                            <option value="Email Digest Only" {% if session.get('daily_summary_pref') == 'Email Digest Only' %}selected{% endif %}>Email Digest Only</option>
+                            <option value="Disabled" {% if session.get('daily_summary_pref') == 'Disabled' %}selected{% endif %}>Disabled</option>
+                        </select>
+                        <span class="form-help">Automated daily report generated at 08:00 UTC summarizing inventory metrics.</span>
+                    </div>
+
+                    <div class="settings-form-actions">
+                        <button type="submit" class="btn btn-royal-purple">
+                            <i class="fa-solid fa-floppy-disk"></i> Save Notification Preferences
+                        </button>
+                        <a href="{{ url_for('web.admin_settings', section='notifications') }}" class="btn btn-secondary-outline">
+                            <i class="fa-solid fa-arrow-rotate-left"></i> Reset
+                        </a>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+
+            <!-- SECTION 4: STAFF AND PERMISSIONS -->
+            {% if section == 'staff_permissions' %}
+            <div class="settings-card">
+                <div class="settings-card-header">
+                    <div class="card-title-group">
+                        <i class="fa-solid fa-users-gear card-header-icon"></i>
+                        <div>
+                            <h3>Staff Accounts & Role Permissions</h3>
+                            <p class="card-subtitle">Manage staff accounts, view activity logs, assign roles, and enforce RBAC rules.</p>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('web.users') }}" class="btn btn-royal-purple">
+                        <i class="fa-solid fa-user-plus"></i> Add New Staff Member
+                    </a>
+                </div>
+
+                <div class="table-responsive" style="margin-bottom: 2rem;">
+                    <table class="data-table staff-permissions-table">
+                        <thead>
+                            <tr>
+                                <th>Staff Member</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Profile Editing</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if staff_users %}
+                                {% for user in staff_users %}
+                                <tr>
+                                    <td>
+                                        <div class="user-cell">
+                                            <div class="avatar-small"><i class="fa-solid fa-user-tie"></i></div>
+                                            <div>
+                                                <strong>{{ user.full_name or user.username }}</strong>
+                                                <div class="text-dim">@{{ user.username }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="text-email" title="{{ user.email or 'N/A' }}">{{ user.email or 'N/A' }}</span></td>
+                                    <td>
+                                        <span class="badge badge-staff">Staff</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-safe"><i class="fa-solid fa-circle-check"></i> Active</span>
+                                    </td>
+                                    <td>
+                                        {% if user.allow_profile_edit %}
+                                            <span class="badge badge-safe"><i class="fa-solid fa-user-pen"></i> Allowed</span>
+                                        {% else %}
+                                            <span class="badge" style="background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3); font-size: 0.78rem; font-weight: 600; padding: 0.25rem 0.6rem; border-radius: 12px; display: inline-flex; align-items: center; gap: 0.35rem;">
+                                                <i class="fa-solid fa-user-lock"></i> Disabled
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons" style="display: flex; gap: 0.5rem; align-items: center;">
+                                            <form action="{{ url_for('web.toggle_staff_profile_edit', user_id=user._id or user.id) }}" method="POST" style="display: inline; margin: 0;">
+                                                {% if user.allow_profile_edit %}
+                                                    <input type="hidden" name="action" value="disable">
+                                                    <button type="submit" class="btn btn-secondary-outline btn-sm" onclick="return confirm('Are you sure you want to disable profile editing for this Staff member?');" title="Disable Profile Editing">
+                                                        <i class="fa-solid fa-user-slash"></i> Disable Profile Editing
+                                                    </button>
+                                                {% else %}
+                                                    <input type="hidden" name="action" value="allow">
+                                                    <button type="submit" class="btn btn-royal-purple btn-sm" onclick="return confirm('Are you sure you want to allow this Staff member to edit their own profile?');" title="Enable Profile Editing">
+                                                        <i class="fa-solid fa-user-check"></i> Enable Profile Editing
+                                                    </button>
+                                                {% endif %}
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted" style="padding: 2rem;">
+                                        No staff accounts found. Click "Add New Staff Member" above to create an account.
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Role Permissions Matrix Summary -->
+                <div class="settings-subcard">
+                    <h4 class="subcard-title"><i class="fa-solid fa-shield-halved"></i> Role-Based Access Control (RBAC) Matrix</h4>
+                    <div class="table-responsive">
+                        <table class="data-table compact-table rbac-matrix-table">
+                            <thead>
+                                <tr>
+                                    <th>Permission Category</th>
+                                    <th>Admin Role</th>
+                                    <th>Staff Role</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>View Executive Dashboard & Analytics</td>
+                                    <td><span class="text-safe"><i class="fa-solid fa-check"></i> Full Access</span></td>
+                                    <td><span class="text-dim"><i class="fa-solid fa-minus"></i> Read-Only Feed</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Stock Operations (Restock / Dispense)</td>
+                                    <td><span class="text-safe"><i class="fa-solid fa-check"></i> Full Access</span></td>
+                                    <td><span class="text-safe"><i class="fa-solid fa-check"></i> Full Access</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Create / Edit / Delete Products</td>
+                                    <td><span class="text-safe"><i class="fa-solid fa-check"></i> Full Access</span></td>
+                                    <td><span class="text-safe"><i class="fa-solid fa-check"></i> Allowed</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Admin Settings & Telemetry Rules</td>
+                                    <td><span class="badge badge-purple"><i class="fa-solid fa-lock"></i> Restricted Admin</span></td>
+                                    <td><span class="text-burgundy"><i class="fa-solid fa-xmark"></i> Blocked (403)</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Manage Staff Accounts & Reset Passwords</td>
+                                    <td><span class="badge badge-purple"><i class="fa-solid fa-lock"></i> Restricted Admin</span></td>
+                                    <td><span class="text-burgundy"><i class="fa-solid fa-xmark"></i> Blocked (403)</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- SECTION 5: SECURITY -->
+            {% if section == 'security' %}
+            <div class="settings-card">
+                <div class="settings-card-header">
+                    <div class="card-title-group">
+                        <i class="fa-solid fa-shield-cat card-header-icon"></i>
+                        <div>
+                            <h3>Security & Authentication Controls</h3>
+                            <p class="card-subtitle">Change administrative credentials, configure session timeouts, and manage active sessions.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Password Change Form -->
+                <div class="settings-subcard">
+                    <h4 class="subcard-title"><i class="fa-solid fa-key"></i> Change Admin Password</h4>
+                    <form method="POST" action="{{ url_for('web.admin_settings', section='security') }}" class="settings-form">
+                        <input type="hidden" name="action_type" value="change_password">
+
+                        <div class="form-grid-3">
+                            <div class="form-group">
+                                <label class="form-label" for="current_password">Current Password</label>
+                                <input type="password" id="current_password" name="current_password" class="form-control" required placeholder="••••••••">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="new_password">New Password</label>
+                                <input type="password" id="new_password" name="new_password" class="form-control" required minlength="6" placeholder="Min. 6 characters">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="confirm_password">Confirm New Password</label>
+                                <input type="password" id="confirm_password" name="confirm_password" class="form-control" required minlength="6" placeholder="Repeat new password">
+                            </div>
+                        </div>
+
+                        <div class="settings-form-actions">
+                            <button type="submit" class="btn btn-royal-purple">
+                                <i class="fa-solid fa-shield-halved"></i> Update Password
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Security Policy Settings -->
+                <div class="settings-subcard" style="margin-top: 1.5rem;">
+                    <h4 class="subcard-title"><i class="fa-solid fa-user-lock"></i> Active Session Policies</h4>
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label class="form-label" for="session_timeout">Inactivity Session Timeout</label>
+                            <select id="session_timeout" name="session_timeout" class="form-control">
+                                <option value="30m">30 Minutes (Recommended)</option>
+                                <option value="1h">1 Hour</option>
+                                <option value="4h">4 Hours</option>
+                                <option value="8h">8 Hours (Shift Duration)</option>
+                            </select>
+                            <span class="form-help">Automatically log out inactive users after specified idle period.</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="login_attempts">Failed Login Attempt Limit</label>
+                            <select id="login_attempts" name="login_attempts" class="form-control">
+                                <option value="5">5 Attempts (Standard)</option>
+                                <option value="3">3 Attempts (Strict Enterprise)</option>
+                                <option value="10">10 Attempts</option>
+                            </select>
+                            <span class="form-help">Temporarily lock user account upon reaching failure threshold.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Session Termination (Pure HTML Confirmation via <details>) -->
+                <div class="settings-subcard destructive-border" style="margin-top: 1.5rem;">
+                    <div class="destructive-content">
+                        <div>
+                            <h4 class="subcard-title text-burgundy"><i class="fa-solid fa-right-from-bracket"></i> Session Revocation</h4>
+                            <p class="text-muted">Invalidate all active remote admin & staff web sessions across all devices.</p>
+                        </div>
+
+                        <!-- Pure CSS/HTML Confirmation Box using HTML5 <details> -->
+                        <details class="confirm-details">
+                            <summary class="btn btn-burgundy">
+                                <i class="fa-solid fa-triangle-exclamation"></i> Logout From All Sessions
+                            </summary>
+                            <div class="confirm-box">
+                                <p class="confirm-message"><i class="fa-solid fa-circle-exclamation text-burgundy"></i> <strong>Confirm Action:</strong> Are you sure you want to terminate all active sessions? You will remain logged in on this browser.</p>
+                                <form method="POST" action="{{ url_for('web.admin_settings', section='security') }}">
+                                    <input type="hidden" name="action_type" value="logout_all">
+                                    <button type="submit" class="btn btn-burgundy btn-sm">
+                                        <i class="fa-solid fa-check"></i> Yes, Terminate All Remote Sessions
+                                    </button>
+                                </form>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- SECTION 6: AUDIT LOGS -->
+            {% if section == 'audit_logs' %}
+            <div class="settings-card">
+                <div class="settings-card-header">
+                    <div class="card-title-group">
+                        <i class="fa-solid fa-clock-rotate-left card-header-icon"></i>
+                        <div>
+                            <h3>Enterprise Audit Trail & System Logs</h3>
+                            <p class="card-subtitle">Comprehensive record of user actions, inventory modifications, threshold adjustments, and auth events.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Action Type</th>
+                                <th>User</th>
+                                <th>Target Item / Setting</th>
+                                <th>Previous Value</th>
+                                <th>New Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if recent_transactions %}
+                                {% for tx in recent_transactions %}
+                                <tr>
+                                    <td>
+                                        <span class="text-muted"><i class="fa-regular fa-clock"></i> {{ tx.timestamp | format_date }}</span>
+                                    </td>
+                                    <td>
+                                        {% if tx.transaction_type == 'restock' %}
+                                            <span class="badge badge-safe"><i class="fa-solid fa-arrow-down-short-wide"></i> Restock</span>
+                                        {% elif tx.transaction_type == 'dispense' %}
+                                            <span class="badge badge-gold"><i class="fa-solid fa-arrow-up-right-from-square"></i> Dispense</span>
+                                        {% else %}
+                                            <span class="badge badge-navy"><i class="fa-solid fa-gear"></i> {{ tx.transaction_type or 'Update' }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong>{{ tx.performed_by or 'Admin' }}</strong>
+                                    </td>
+                                    <td>
+                                        <strong>{{ tx.product_name or tx.product_id or 'Inventory Target' }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="text-dim">{{ tx.previous_stock if tx.previous_stock is not none else '-' }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="text-safe"><strong>{{ tx.new_stock if tx.new_stock is not none else tx.quantity }}</strong></span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td><span class="text-muted">2026-09-14 16:30:00</span></td>
+                                    <td><span class="badge badge-purple">Rule Update</span></td>
+                                    <td><strong>Admin User</strong></td>
+                                    <td>Min Stock Threshold</td>
+                                    <td><span class="text-dim">10</span></td>
+                                    <td><span class="text-safe">15</span></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="text-muted">2026-09-14 15:45:00</span></td>
+                                    <td><span class="badge badge-safe">Restock</span></td>
+                                    <td><strong>Staff User</strong></td>
+                                    <td>Paracetamol 500mg</td>
+                                    <td><span class="text-dim">4</span></td>
+                                    <td><span class="text-safe">50</span></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="text-muted">2026-09-14 14:10:00</span></td>
+                                    <td><span class="badge badge-gold">Dispense</span></td>
+                                    <td><strong>Staff User</strong></td>
+                                    <td>Surgical Gloves (Box)</td>
+                                    <td><span class="text-dim">80</span></td>
+                                    <td><span class="text-safe">70</span></td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- SECTION 7: BACKUP AND EXPORT -->
+            {% if section == 'backup_export' %}
+            <div class="settings-card">
+                <div class="settings-card-header">
+                    <div class="card-title-group">
+                        <i class="fa-solid fa-database card-header-icon"></i>
+                        <div>
+                            <h3>Data Backup & System Export</h3>
+                            <p class="card-subtitle">Export inventory data, download transaction records, and inspect automated backup health.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-subcard gold-highlight-card" style="margin-bottom: 1.5rem;">
+                    <div class="backup-status-wrapper">
+                        <div class="backup-info">
+                            <span class="badge badge-gold"><i class="fa-solid fa-cloud-arrow-up"></i> Automated Backup Active</span>
+                            <h4 style="margin-top: 0.5rem;">Database Health & Snapshots</h4>
+                            <p class="text-muted">System database backups are performed hourly. All transactions and inventory records are synchronized.</p>
+                        </div>
+                        <div class="backup-time-badge">
+                            <span class="text-dim">Last Snapshot:</span>
+                            <strong class="text-gold">2026-09-14 16:45:00 UTC</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="export-options-grid">
+                    <div class="export-card">
+                        <i class="fa-solid fa-file-csv export-icon text-safe"></i>
+                        <h4>Export Inventory Items (CSV)</h4>
+                        <p class="text-muted">Download full inventory catalogue including stock levels, categories, minimum thresholds, and risk tags.</p>
+                        <a href="{{ url_for('web.export_inventory_csv') }}" class="btn btn-royal-purple btn-block">
+                            <i class="fa-solid fa-download"></i> Download Inventory CSV
+                        </a>
+                    </div>
+
+                    <div class="export-card">
+                        <i class="fa-solid fa-file-invoice-dollar export-icon text-gold"></i>
+                        <h4>Export Transaction History (CSV)</h4>
+                        <p class="text-muted">Download complete stock movement records, including restocks, dispenses, timestamp, and operator names.</p>
+                        <a href="{{ url_for('web.export_transactions_csv') }}" class="btn btn-royal-purple btn-block">
+                            <i class="fa-solid fa-download"></i> Download Transactions CSV
+                        </a>
+                    </div>
+
+                    <div class="export-card">
+                        <i class="fa-solid fa-triangle-exclamation export-icon text-burgundy"></i>
+                        <h4>Export Risk & Alert Report</h4>
+                        <p class="text-muted">Generate executive summary report of expired, critical stock, and low inventory items.</p>
+                        <a href="{{ url_for('web.export_alerts_report') }}" class="btn btn-secondary-outline btn-block">
+                            <i class="fa-solid fa-file-csv"></i> Generate Alert Report
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- SECTION 8: APPEARANCE -->
+            {% if section == 'appearance' %}
+            <div class="settings-card">
+                <div class="settings-card-header">
+                    <div class="card-title-group">
+                        <i class="fa-solid fa-palette card-header-icon"></i>
+                        <div>
+                            <h3>Appearance & UI Preferences</h3>
+                            <p class="card-subtitle">Customize theme display mode, table density, and layout preferences.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-grid-2" style="margin-bottom: 2rem;">
+                    <!-- Pure HTML Theme Switch Form -->
+                    <div class="settings-subcard">
+                        <h4 class="subcard-title"><i class="fa-solid fa-moon"></i> Active Interface Theme</h4>
+                        <p class="text-muted" style="margin-bottom: 1rem;">
+                            Current theme: <strong>{{ session.get('theme', 'dark')|upper }} Mode</strong>
+                        </p>
+                        <form method="POST" action="{{ url_for('web.toggle_theme') }}">
+                            <button type="submit" class="btn btn-royal-purple">
+                                {% if session.get('theme') == 'light' %}
+                                    <i class="fa-solid fa-moon"></i> Switch to Dark Mode
+                                {% else %}
+                                    <i class="fa-solid fa-sun"></i> Switch to Light Mode
+                                {% endif %}
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Table Density Form -->
+                    <div class="settings-subcard">
+                        <h4 class="subcard-title"><i class="fa-solid fa-table-cells"></i> Table Density Preference</h4>
+                        <form method="POST" action="{{ url_for('web.admin_settings', section='appearance') }}">
+                            <input type="hidden" name="action_type" value="appearance">
+                            <div class="form-group">
+                                <select name="table_view" class="form-control">
+                                    <option value="comfortable" {% if session.get('table_view', 'comfortable') == 'comfortable' %}selected{% endif %}>Comfortable (Spacious Padding)</option>
+                                    <option value="compact" {% if session.get('table_view') == 'compact' %}selected{% endif %}>Compact (Dense Enterprise View)</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-royal-purple" style="margin-top: 0.5rem;">
+                                <i class="fa-solid fa-check"></i> Apply Layout Setting
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- SECTION 9: SYSTEM INFORMATION -->
+            {% if section == 'system_info' %}
+            <div class="settings-card">
+                <div class="settings-card-header">
+                    <div class="card-title-group">
+                        <i class="fa-solid fa-circle-info card-header-icon"></i>
+                        <div>
+                            <h3>System Information & Health Telemetry</h3>
+                            <p class="card-subtitle">Application build parameters, database status, system health indicators, and inventory metrics.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-grid-3" style="margin-bottom: 2rem;">
+                    <div class="sys-metric-card">
+                        <div class="sys-metric-icon bg-purple-glow">
+                            <i class="fa-solid fa-cube text-purple"></i>
+                        </div>
+                        <div class="sys-metric-body">
+                            <span class="sys-metric-label">Application Version</span>
+                            <strong class="sys-metric-value">v2.4.0 (Enterprise)</strong>
+                        </div>
+                    </div>
+
+                    <div class="sys-metric-card">
+                        <div class="sys-metric-icon bg-safe-glow">
+                            <i class="fa-solid fa-database text-safe"></i>
+                        </div>
+                        <div class="sys-metric-body">
+                            <span class="sys-metric-label">Database Engine</span>
+                            <strong class="sys-metric-value">{{ db_health.status if db_health else 'Connected' }}</strong>
+                        </div>
+                    </div>
+
+                    <div class="sys-metric-card">
+                        <div class="sys-metric-icon bg-gold-glow">
+                            <i class="fa-solid fa-heart-pulse text-gold"></i>
+                        </div>
+                        <div class="sys-metric-body">
+                            <span class="sys-metric-label">System Health</span>
+                            <strong class="sys-metric-value text-safe">Operational (100%)</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-subcard">
+                    <h4 class="subcard-title"><i class="fa-solid fa-chart-pie"></i> Inventory Metrics Overview</h4>
+                    <div class="sys-metrics-details">
+                        <div class="metric-row">
+                            <span class="text-muted">Total Products Managed:</span>
+                            <strong>{{ metrics.total_products if metrics else (products|length) }} items</strong>
+                        </div>
+                        <div class="metric-row">
+                            <span class="text-muted">Registered Staff Accounts:</span>
+                            <strong>{{ staff_users|length }} staff users</strong>
+                        </div>
+                        <div class="metric-row">
+                            <span class="text-muted">Low Stock Warnings Active:</span>
+                            <strong class="text-gold">{{ metrics.low_stock_count if metrics else 0 }} items</strong>
+                        </div>
+                        <div class="metric-row">
+                            <span class="text-muted">Critical Risk Stock Items:</span>
+                            <strong class="text-burgundy">{{ metrics.critical_stock_count if metrics else 0 }} items</strong>
+                        </div>
+                        <div class="metric-row">
+                            <span class="text-muted">Last System Backup:</span>
+                            <strong>2026-09-14 16:45:00 UTC</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </main>
+    </div>
+</div>
+{% endblock %}

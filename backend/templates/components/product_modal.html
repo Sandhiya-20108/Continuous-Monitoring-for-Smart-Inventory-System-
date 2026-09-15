@@ -1,0 +1,69 @@
+{% if show_product_modal or edit_product %}
+<!-- ADD / EDIT PRODUCT MODAL (SERVER-SIDE RENDERED) -->
+<div class="modal-overlay active">
+    <div class="modal-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+            <h3 style="font-size: 1.1rem; color: var(--text-main);">
+                {% if edit_product %}Edit Product: {{ edit_product.name }}{% else %}Add New Inventory Product{% endif %}
+            </h3>
+            <a href="{{ request.path }}" class="drawer-close" title="Close Modal">&times;</a>
+        </div>
+        <form action="{% if edit_product %}{{ url_for('web.update_product', product_id=edit_product._id) }}{% else %}{{ url_for('web.add_product') }}{% endif %}" method="POST" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
+            
+            <div class="form-group">
+                <label>SKU Code</label>
+                <input type="text" name="sku" value="{{ edit_product.sku if edit_product else '' }}" class="form-control" style="padding-left:1rem;" required {% if edit_product %}readonly{% endif %}>
+            </div>
+
+            <div class="form-group">
+                <label>Product Name</label>
+                <input type="text" name="name" value="{{ edit_product.name if edit_product else '' }}" class="form-control" style="padding-left:1rem;" required>
+            </div>
+
+            <div class="form-group">
+                <label>Category</label>
+                <select name="category" class="filter-select" style="width:100%;">
+                    {% set cat = edit_product.category if edit_product else 'Electronics' %}
+                    <option value="Electronics" {% if cat == 'Electronics' %}selected{% endif %}>Electronics</option>
+                    <option value="Perishable" {% if cat == 'Perishable' %}selected{% endif %}>Perishable</option>
+                    <option value="Chemicals" {% if cat == 'Chemicals' %}selected{% endif %}>Chemicals</option>
+                    <option value="Industrial" {% if cat == 'Industrial' %}selected{% endif %}>Industrial</option>
+                    <option value="Consumables" {% if cat == 'Consumables' %}selected{% endif %}>Consumables</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Current Stock</label>
+                <input type="number" name="current_stock" value="{{ edit_product.current_stock if edit_product else 25 }}" class="form-control" style="padding-left:1rem;" min="0" required>
+            </div>
+
+            <div class="form-group">
+                <label>Safety Min Threshold</label>
+                <input type="number" name="min_stock" value="{{ edit_product.min_stock if edit_product else 10 }}" class="form-control" style="padding-left:1rem;" min="0" required>
+            </div>
+
+            <div class="form-group">
+                <label>Unit Price ($)</label>
+                <input type="number" name="unit_price" value="{{ edit_product.unit_price if edit_product else 19.99 }}" class="form-control" style="padding-left:1rem;" step="0.01" min="0" required>
+            </div>
+
+            <div class="form-group">
+                <label>Avg Daily Usage</label>
+                <input type="number" name="average_daily_usage" value="{{ edit_product.average_daily_usage if edit_product else 2.0 }}" class="form-control" style="padding-left:1rem;" step="0.1" min="0.1" required>
+            </div>
+
+            <div class="form-group">
+                <label>Expiry Date</label>
+                <input type="date" name="expiry_date" value="{{ edit_product.expiry_date if edit_product else '2027-12-31' }}" class="form-control" style="padding-left:1rem;" required>
+            </div>
+
+            <div style="grid-column: span 2; display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem;">
+                <a href="{{ request.path }}" class="btn-header-action">Cancel</a>
+                <button type="submit" class="btn-header-action" style="background: var(--primary-accent); border-color: var(--primary-accent);">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Product
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}

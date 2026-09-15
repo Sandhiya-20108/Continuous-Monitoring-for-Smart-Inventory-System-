@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}Audit Trail & Stock History | Staff Portal{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+
+    <!-- Flash Notifications -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category if category != 'error' else 'danger' }}" style="padding: 0.75rem 1.25rem; margin-bottom: 1rem; border-radius: 6px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--text-main); font-size: 0.9rem;">
+            <i class="fa-solid fa-circle-check" style="margin-right: 0.5rem; color: #10b981;"></i> {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="card">
+        <div class="table-header-bar">
+            <div class="table-title-group">
+                <h3><i class="fa-solid fa-clock-rotate-left" style="color: var(--primary-cyan);"></i> Stock Operations Audit Trail</h3>
+                <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.2rem;">Complete audit log of recent inventory movements, stock receipts, and issues.</p>
+            </div>
+            <div class="table-controls">
+                <a href="{{ url_for('web.staff_products') }}" class="btn-header-action">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Products
+                </a>
+            </div>
+        </div>
+
+        {% if not recent_transactions %}
+        <div class="empty-state">
+            <i class="fa-solid fa-receipt"></i>
+            <h4 style="font-size: 1.1rem; color: var(--text-main); font-weight: 700;">No Recent Transactions Found</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted); max-width: 420px;">No stock movement operations have been recorded yet. Stock receive and issue activities will appear here.</p>
+        </div>
+        {% else %}
+        <div class="table-responsive">
+            <table class="inventory-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Product Name</th>
+                        <th>Action Type</th>
+                        <th style="text-align: right;">Previous</th>
+                        <th style="text-align: right;">Change</th>
+                        <th style="text-align: right;">New Stock</th>
+                        <th>Performed By</th>
+                        <th>Reason / Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tx in recent_transactions %}
+                    <tr>
+                        <td style="color: var(--text-muted); font-size: 0.78rem; white-space: nowrap;">
+                            {{ tx.timestamp[:19].replace('T', ' ') if tx.timestamp else 'N/A' }}
+                        </td>
+                        <td>
+                            <strong style="color: var(--text-main);">{{ tx.product_name }}</strong>
+                        </td>
+                        <td>
+                            {% if tx.type == 'STOCK_IN' %}
+                            <span class="risk-pill Safe">📥 Stock In</span>
+                            {% elif tx.type == 'STOCK_OUT' %}
+                            <span class="risk-pill Critical">📤 Stock Out</span>
+                            {% else %}
+                            <span class="risk-pill Warning">⚙️ Adjustment</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right; color: var(--text-muted);">{{ tx.old_stock }}</td>
+                        <td style="text-align: right; font-weight: 700;">
+                            {% if tx.quantity_changed > 0 %}
+                            <span style="color: #047857;">+{{ tx.quantity_changed }}</span>
+                            {% elif tx.quantity_changed < 0 %}
+                            <span style="color: #b91c1c;">{{ tx.quantity_changed }}</span>
+                            {% else %}
+                            <span style="color: #2563eb;">0</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right; font-weight: 700; color: var(--text-main);">{{ tx.new_stock }}</td>
+                        <td>
+                            <div style="display: flex; flex-direction: column;">
+                                <strong style="font-size: 0.82rem; color: var(--text-main);">{{ tx.user }}</strong>
+                                <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">{{ tx.role | default('Staff') | upper }}</span>
+                            </div>
+                        </td>
+                        <td style="color: var(--text-muted); font-size: 0.8rem;">
+                            {{ tx.notes if tx.notes else '-' }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

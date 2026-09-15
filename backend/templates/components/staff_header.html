@@ -1,0 +1,39 @@
+<!-- Staff Top Application Header -->
+<header class="app-header">
+    <div class="header-left">
+        <h1 class="page-title">{{ page_title | default('Staff Portal') }}</h1>
+        <div class="breadcrumb">Staff Workspace / {{ page_breadcrumb | default('Product Catalog') }}</div>
+    </div>
+
+    <div class="header-right">
+        <form action="{{ url_for('web.staff_product_search') }}" method="GET" class="global-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" name="search" value="{{ search_query | default('') }}" placeholder="Search products or SKU...">
+        </form>
+
+        <form action="{{ url_for('web.toggle_theme') }}" method="POST" style="margin:0;">
+            <input type="hidden" name="redirect_url" value="{{ request.full_path }}">
+            {% if session.get('theme', 'dark') == 'light' %}
+            <button type="submit" class="theme-toggle-btn btn-header-action" title="Switch to dark mode" aria-label="Switch to dark mode">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+            {% else %}
+            <button type="submit" class="theme-toggle-btn btn-header-action" title="Switch to light mode" aria-label="Switch to light mode">
+                <i class="fa-solid fa-sun"></i>
+            </button>
+            {% endif %}
+        </form>
+
+        <a href="{{ url_for('web.staff_profile') }}" class="btn-header-action" title="Staff Profile" style="display: flex; align-items: center; gap: 0.4rem; text-decoration: none;">
+            <i class="fa-solid fa-user"></i>
+            <span>{{ session.get('user', {}).get('full_name', session.get('user', {}).get('username', 'Staff')) }}</span>
+            <span style="font-size: 0.7rem; background: rgba(16, 185, 129, 0.2); color: #34d399; padding: 0.1rem 0.4rem; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.3);">STAFF</span>
+        </a>
+
+        <form action="{{ url_for('web.logout') }}" method="POST" style="margin:0;">
+            <button type="submit" class="btn-header-action" title="Logout" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border-color: rgba(239, 68, 68, 0.3);">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout
+            </button>
+        </form>
+    </div>
+</header>

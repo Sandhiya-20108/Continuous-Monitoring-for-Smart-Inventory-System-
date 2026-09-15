@@ -1,0 +1,560 @@
+{% extends "base.html" %}
+
+{% block title %}Executive Reports & Intelligence Center - Smart Inventory{% endblock %}
+
+{% block content %}
+<div class="reports-page-wrapper">
+
+    <!-- Page Header & Tab Navigation -->
+    <div class="reports-header-card">
+        <div class="reports-header-content">
+            <div class="reports-title-group">
+                <i class="fa-solid fa-chart-column reports-header-icon"></i>
+                <div>
+                    <h2>Executive Reports & Intelligence Center</h2>
+                    <p class="text-muted">Generate, filter, customize, preview, and export enterprise inventory telemetry reports.</p>
+                </div>
+            </div>
+            <div class="reports-quick-actions">
+                <a href="{{ url_for('web.export_inventory_csv') }}" class="btn btn-royal-purple">
+                    <i class="fa-solid fa-download"></i> Inventory CSV
+                </a>
+                <a href="{{ url_for('web.export_transactions_csv') }}" class="btn btn-royal-purple">
+                    <i class="fa-solid fa-download"></i> Transactions CSV
+                </a>
+                <a href="{{ url_for('web.export_alerts_report') }}" class="btn btn-secondary-outline">
+                    <i class="fa-solid fa-file-csv"></i> Alert Report
+                </a>
+            </div>
+        </div>
+
+        <!-- Section Navigation Tabs -->
+        <div class="reports-tab-nav">
+            <a href="{{ url_for('web.reports_view', tab='overview') }}" class="tab-item {% if active_tab == 'overview' %}active{% endif %}">
+                <i class="fa-solid fa-gauge-high"></i> Overview
+            </a>
+            <a href="{{ url_for('web.reports_view', tab='inventory') }}" class="tab-item {% if active_tab == 'inventory' %}active{% endif %}">
+                <i class="fa-solid fa-boxes-stacked"></i> Inventory Report
+            </a>
+            <a href="{{ url_for('web.reports_view', tab='transactions') }}" class="tab-item {% if active_tab == 'transactions' %}active{% endif %}">
+                <i class="fa-solid fa-receipt"></i> Transaction Report
+            </a>
+            <a href="{{ url_for('web.reports_view', tab='alerts') }}" class="tab-item {% if active_tab == 'alerts' %}active{% endif %}">
+                <i class="fa-solid fa-triangle-exclamation"></i> Risk & Alert Report
+            </a>
+            <a href="{{ url_for('web.reports_view', tab='customize') }}" class="tab-item {% if active_tab == 'customize' %}active{% endif %}">
+                <i class="fa-solid fa-sliders"></i> Customize Report
+            </a>
+            <a href="{{ url_for('web.reports_view', tab='saved') }}" class="tab-item {% if active_tab == 'saved' %}active{% endif %}">
+                <i class="fa-solid fa-bookmark"></i> Saved Configurations ({{ saved_reports|length }})
+            </a>
+        </div>
+    </div>
+
+    <!-- Flash Notification Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category if category != 'error' else 'danger' }}" style="margin-top: 1rem; padding: 0.85rem 1.25rem; border-radius: 8px; background: rgba(124, 58, 237, 0.15); border: 1px solid rgba(124, 58, 237, 0.3); color: var(--text-main); font-size: 0.9rem;">
+              <i class="fa-solid fa-circle-info"></i> {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- 1. OVERVIEW & KPI SUMMARY TAB -->
+    {% if active_tab == 'overview' %}
+    <div class="reports-section-card" style="margin-top: 1.5rem;">
+        <h3 class="section-card-title"><i class="fa-solid fa-chart-line"></i> Report Telemetry Summary</h3>
+        <div class="reports-kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-header">Total Products Managed</div>
+                <div class="kpi-value">{{ metrics.total_products if metrics else products|length }}</div>
+                <div class="kpi-subtext"><i class="fa-solid fa-box"></i> Active inventory catalogue items</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-header">Total Stock Units</div>
+                <div class="kpi-value">{{ metrics.total_stock_qty if metrics else 0 }}</div>
+                <div class="kpi-subtext"><i class="fa-solid fa-layer-group"></i> Physical units in stock</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-header">Low Stock Warnings</div>
+                <div class="kpi-value text-gold">{{ metrics.low_stock_count if metrics else 0 }}</div>
+                <div class="kpi-subtext"><i class="fa-solid fa-triangle-exclamation"></i> Stock below min safety threshold</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-header">Critical Risk Items</div>
+                <div class="kpi-value text-burgundy">{{ metrics.critical_stock_count if metrics else 0 }}</div>
+                <div class="kpi-subtext"><i class="fa-solid fa-circle-radiation"></i> Immediate stockout imminent</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-header">Recorded Transactions</div>
+                <div class="kpi-value">{{ metrics.total_tx_count if metrics else transactions|length }}</div>
+                <div class="kpi-subtext"><i class="fa-solid fa-clock-rotate-left"></i> Total stock audit records</div>
+            </div>
+        </div>
+
+        <!-- Quick Launch Export Grid -->
+        <h4 style="margin-top: 2rem; margin-bottom: 1rem; color: var(--text-main); font-size: 1.05rem;"><i class="fa-solid fa-file-export"></i> Immediate Report Exports</h4>
+        <div class="export-options-grid">
+            <div class="export-card">
+                <i class="fa-solid fa-file-csv export-icon text-safe"></i>
+                <h4>Inventory Catalogue CSV</h4>
+                <p class="text-muted">Export complete product catalogue with stock levels, categories, minimum thresholds, and risk tags.</p>
+                <a href="{{ url_for('web.export_inventory_csv') }}" class="btn btn-royal-purple btn-block">
+                    <i class="fa-solid fa-download"></i> Download Inventory CSV
+                </a>
+            </div>
+            <div class="export-card">
+                <i class="fa-solid fa-file-invoice-dollar export-icon text-gold"></i>
+                <h4>Transaction History CSV</h4>
+                <p class="text-muted">Export complete audit trail of stock movements, restocks, dispenses, operator timestamps, and notes.</p>
+                <a href="{{ url_for('web.export_transactions_csv') }}" class="btn btn-royal-purple btn-block">
+                    <i class="fa-solid fa-download"></i> Download Transactions CSV
+                </a>
+            </div>
+            <div class="export-card">
+                <i class="fa-solid fa-triangle-exclamation export-icon text-burgundy"></i>
+                <h4>Risk & Alert Log CSV</h4>
+                <p class="text-muted">Export active risk alerts including low stock warnings, expiring items, anomalies, and reorder demands.</p>
+                <a href="{{ url_for('web.export_alerts_report') }}" class="btn btn-secondary-outline btn-block">
+                    <i class="fa-solid fa-file-csv"></i> Generate Alert Report
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 2. INVENTORY REPORT TAB -->
+    {% if active_tab == 'inventory' %}
+    <div class="reports-section-card" style="margin-top: 1.5rem;">
+        <div class="section-card-header">
+            <h3><i class="fa-solid fa-boxes-stacked"></i> Inventory Catalogue Report Preview</h3>
+            <a href="{{ url_for('web.export_inventory_csv', search=filters.search, category=filters.category, stock_status=filters.stock_status, risk_level=filters.risk_level, sort_by=filters.sort_by) }}" class="btn btn-royal-purple">
+                <i class="fa-solid fa-file-csv"></i> Export Current Filtered Inventory CSV
+            </a>
+        </div>
+
+        <!-- Inventory Filter Form -->
+        <form method="GET" action="{{ url_for('web.reports_view') }}" class="reports-filter-bar">
+            <input type="hidden" name="tab" value="inventory">
+            <div class="filter-field">
+                <label>Product Search</label>
+                <input type="text" name="search" value="{{ filters.search or '' }}" placeholder="Search name or SKU..." class="form-control">
+            </div>
+            <div class="filter-field">
+                <label>Category</label>
+                <select name="category" class="form-control">
+                    <option value="all">All Categories</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat }}" {% if filters.category == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-field">
+                <label>Stock Status</label>
+                <select name="stock_status" class="form-control">
+                    <option value="all">All Stock Levels</option>
+                    <option value="in_stock" {% if filters.stock_status == 'in_stock' %}selected{% endif %}>In Stock</option>
+                    <option value="low_stock" {% if filters.stock_status == 'low_stock' %}selected{% endif %}>Low Stock</option>
+                    <option value="out_of_stock" {% if filters.stock_status == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
+                </select>
+            </div>
+            <div class="filter-field">
+                <label>Risk Level</label>
+                <select name="risk_level" class="form-control">
+                    <option value="all">All Risk Levels</option>
+                    <option value="Critical" {% if filters.risk_level == 'Critical' %}selected{% endif %}>Critical Risk</option>
+                    <option value="High Risk" {% if filters.risk_level == 'High Risk' %}selected{% endif %}>High Risk</option>
+                    <option value="Warning" {% if filters.risk_level == 'Warning' %}selected{% endif %}>Warning</option>
+                    <option value="Safe" {% if filters.risk_level == 'Safe' %}selected{% endif %}>Safe</option>
+                </select>
+            </div>
+            <div class="filter-field">
+                <label>Sort By</label>
+                <select name="sort_by" class="form-control">
+                    <option value="stock" {% if filters.sort_by == 'stock' %}selected{% endif %}>Stock (Lowest First)</option>
+                    <option value="price" {% if filters.sort_by == 'price' %}selected{% endif %}>Price (Highest First)</option>
+                    <option value="expiry" {% if filters.sort_by == 'expiry' %}selected{% endif %}>Expiry Date</option>
+                </select>
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-royal-purple"><i class="fa-solid fa-filter"></i> Apply Filters</button>
+                <a href="{{ url_for('web.reports_view', tab='inventory') }}" class="btn btn-secondary-outline"><i class="fa-solid fa-rotate-left"></i> Reset</a>
+            </div>
+        </form>
+
+        <!-- Preview Table -->
+        <div class="table-responsive" style="margin-top: 1rem;">
+            <table class="data-table staff-permissions-table">
+                <thead>
+                    <tr>
+                        <th>Product ID</th>
+                        <th>Product Name</th>
+                        <th>Category</th>
+                        <th>Current Stock</th>
+                        <th>Minimum Stock</th>
+                        <th>Price</th>
+                        <th>Expiry Date</th>
+                        <th>Risk Level</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if products %}
+                        {% for p in products %}
+                        <tr>
+                            <td><code>{{ p._id or p.sku }}</code></td>
+                            <td><strong>{{ p.name }}</strong></td>
+                            <td>{{ p.category }}</td>
+                            <td><strong>{{ p.current_stock }}</strong> {{ p.unit or '' }}</td>
+                            <td>{{ p.min_stock }}</td>
+                            <td>${{ "%.2f"|format(p.unit_price or 0.0) }}</td>
+                            <td>{{ p.expiry_date or 'N/A' }}</td>
+                            <td>
+                                <span class="badge {% if p.risk_level == 'Critical' %}badge-purple{% elif p.risk_level == 'High Risk' %}badge-purple{% elif p.risk_level == 'Warning' %}badge-staff{% else %}badge-safe{% endif %}">
+                                    {{ p.risk_level }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if p.current_stock <= 0 %}
+                                    <span class="badge badge-purple">Out of Stock</span>
+                                {% elif p.current_stock < p.min_stock %}
+                                    <span class="badge badge-staff">Low Stock</span>
+                                {% else %}
+                                    <span class="badge badge-safe">Active</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="9" class="text-center text-muted" style="padding: 3rem;">
+                                <i class="fa-solid fa-folder-open" style="font-size: 2rem; margin-bottom: 0.5rem; display: block;"></i>
+                                No inventory records found for the selected filters.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 3. TRANSACTION REPORT TAB -->
+    {% if active_tab == 'transactions' %}
+    <div class="reports-section-card" style="margin-top: 1.5rem;">
+        <div class="section-card-header">
+            <h3><i class="fa-solid fa-receipt"></i> Stock Movement Transaction History Preview</h3>
+            <a href="{{ url_for('web.export_transactions_csv', tx_type=filters.tx_type, tx_user=filters.tx_user) }}" class="btn btn-royal-purple">
+                <i class="fa-solid fa-file-csv"></i> Export Current Filtered Transactions CSV
+            </a>
+        </div>
+
+        <!-- Transaction Filter Form -->
+        <form method="GET" action="{{ url_for('web.reports_view') }}" class="reports-filter-bar">
+            <input type="hidden" name="tab" value="transactions">
+            <div class="filter-field">
+                <label>Transaction Type</label>
+                <select name="tx_type" class="form-control">
+                    <option value="all">All Types</option>
+                    <option value="STOCK_IN" {% if filters.tx_type == 'STOCK_IN' %}selected{% endif %}>STOCK_IN (Restock)</option>
+                    <option value="STOCK_OUT" {% if filters.tx_type == 'STOCK_OUT' %}selected{% endif %}>STOCK_OUT (Dispense)</option>
+                    <option value="ADJUSTMENT" {% if filters.tx_type == 'ADJUSTMENT' %}selected{% endif %}>ADJUSTMENT (Audit)</option>
+                </select>
+            </div>
+            <div class="filter-field">
+                <label>Performed By (Operator)</label>
+                <input type="text" name="tx_user" value="{{ filters.tx_user or '' }}" placeholder="Filter username..." class="form-control">
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-royal-purple"><i class="fa-solid fa-filter"></i> Apply Filters</button>
+                <a href="{{ url_for('web.reports_view', tab='transactions') }}" class="btn btn-secondary-outline"><i class="fa-solid fa-rotate-left"></i> Reset</a>
+            </div>
+        </form>
+
+        <!-- Preview Table -->
+        <div class="table-responsive" style="margin-top: 1rem;">
+            <table class="data-table staff-permissions-table">
+                <thead>
+                    <tr>
+                        <th>Transaction ID</th>
+                        <th>Product Name</th>
+                        <th>Transaction Type</th>
+                        <th>Quantity</th>
+                        <th>Previous Stock</th>
+                        <th>Updated Stock</th>
+                        <th>Performed By</th>
+                        <th>Date & Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if transactions %}
+                        {% for tx in transactions %}
+                        <tr>
+                            <td><code>{{ tx.id or tx._id }}</code></td>
+                            <td><strong>{{ tx.product_name }}</strong></td>
+                            <td>
+                                <span class="badge {% if tx.type == 'STOCK_IN' or tx.transaction_type == 'restock' %}badge-safe{% elif tx.type == 'STOCK_OUT' or tx.transaction_type == 'dispense' %}badge-purple{% else %}badge-staff{% endif %}">
+                                    {{ tx.type or tx.transaction_type or 'ADJUSTMENT' }}
+                                </span>
+                            </td>
+                            <td><strong>{{ tx.quantity_changed or tx.quantity or tx.new_stock }}</strong></td>
+                            <td>{{ tx.old_stock if tx.old_stock is defined else 'N/A' }}</td>
+                            <td>{{ tx.new_stock if tx.new_stock is defined else 'N/A' }}</td>
+                            <td><i class="fa-solid fa-user-tie"></i> {{ tx.user or 'System' }}</td>
+                            <td><i class="fa-regular fa-clock"></i> {{ tx.timestamp[:19] if tx.timestamp else 'N/A' }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted" style="padding: 3rem;">
+                                <i class="fa-solid fa-receipt" style="font-size: 2rem; margin-bottom: 0.5rem; display: block;"></i>
+                                No transaction history found for this period.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 4. RISK AND ALERT REPORT TAB -->
+    {% if active_tab == 'alerts' %}
+    <div class="reports-section-card" style="margin-top: 1.5rem;">
+        <div class="section-card-header">
+            <h3><i class="fa-solid fa-triangle-exclamation"></i> Risk & Alert Report Preview</h3>
+            <a href="{{ url_for('web.export_alerts_report', alert_severity=filters.alert_severity, alert_type=filters.alert_type) }}" class="btn btn-royal-purple">
+                <i class="fa-solid fa-file-csv"></i> Export Current Filtered Alert Report CSV
+            </a>
+        </div>
+
+        <!-- Alert Filter Form -->
+        <form method="GET" action="{{ url_for('web.reports_view') }}" class="reports-filter-bar">
+            <input type="hidden" name="tab" value="alerts">
+            <div class="filter-field">
+                <label>Risk Severity</label>
+                <select name="alert_severity" class="form-control">
+                    <option value="all">All Severities</option>
+                    <option value="Critical" {% if filters.alert_severity == 'Critical' %}selected{% endif %}>Critical</option>
+                    <option value="High Risk" {% if filters.alert_severity == 'High Risk' %}selected{% endif %}>High Risk</option>
+                    <option value="Warning" {% if filters.alert_severity == 'Warning' %}selected{% endif %}>Warning</option>
+                    <option value="Safe" {% if filters.alert_severity == 'Safe' %}selected{% endif %}>Safe</option>
+                </select>
+            </div>
+            <div class="filter-field">
+                <label>Alert Type</label>
+                <select name="alert_type" class="form-control">
+                    <option value="all">All Alert Types</option>
+                    <option value="Low Stock" {% if filters.alert_type == 'Low Stock' %}selected{% endif %}>Low Stock</option>
+                    <option value="Out of Stock" {% if filters.alert_type == 'Out of Stock' %}selected{% endif %}>Out of Stock</option>
+                    <option value="Expiry Approaching" {% if filters.alert_type == 'Expiry Approaching' %}selected{% endif %}>Expiry Approaching</option>
+                    <option value="Unusual Movement" {% if filters.alert_type == 'Unusual Movement' %}selected{% endif %}>Unusual Movement</option>
+                    <option value="Overstock" {% if filters.alert_type == 'Overstock' %}selected{% endif %}>Overstock</option>
+                    <option value="Reorder Required" {% if filters.alert_type == 'Reorder Required' %}selected{% endif %}>Reorder Required</option>
+                </select>
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-royal-purple"><i class="fa-solid fa-filter"></i> Apply Filters</button>
+                <a href="{{ url_for('web.reports_view', tab='alerts') }}" class="btn btn-secondary-outline"><i class="fa-solid fa-rotate-left"></i> Reset</a>
+            </div>
+        </form>
+
+        <!-- Preview Table -->
+        <div class="table-responsive" style="margin-top: 1rem;">
+            <table class="data-table staff-permissions-table">
+                <thead>
+                    <tr>
+                        <th>Alert ID</th>
+                        <th>Product Name</th>
+                        <th>Category</th>
+                        <th>Current Stock</th>
+                        <th>Minimum Stock</th>
+                        <th>Risk Type</th>
+                        <th>Risk Level</th>
+                        <th>Alert Message</th>
+                        <th>Created Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if alerts %}
+                        {% for alt in alerts %}
+                        <tr>
+                            <td><code>{{ alt.id }}</code></td>
+                            <td><strong>{{ alt.product_name }}</strong></td>
+                            <td>{{ alt.category }}</td>
+                            <td><strong>{{ alt.current_stock }}</strong></td>
+                            <td>{{ alt.min_stock }}</td>
+                            <td>{{ alt.risk_type }}</td>
+                            <td>
+                                <span class="badge {% if alt.risk_level == 'Critical' %}badge-purple{% elif alt.risk_level == 'High Risk' %}badge-purple{% elif alt.risk_level == 'Warning' %}badge-staff{% else %}badge-safe{% endif %}">
+                                    {{ alt.risk_level }}
+                                </span>
+                            </td>
+                            <td style="max-width: 250px; font-size: 0.8rem;">{{ alt.alert_message }}</td>
+                            <td><i class="fa-regular fa-clock"></i> {{ alt.timestamp[:10] if alt.timestamp else 'N/A' }}</td>
+                            <td><span class="badge badge-safe">Active</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="10" class="text-center text-muted" style="padding: 3rem;">
+                                <i class="fa-solid fa-shield-halved" style="font-size: 2rem; margin-bottom: 0.5rem; display: block;"></i>
+                                No active risk alerts found.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 5. CUSTOMIZE & SAVE REPORT TAB -->
+    {% if active_tab == 'customize' %}
+    <div class="reports-section-card" style="margin-top: 1.5rem;">
+        <h3 class="section-card-title"><i class="fa-solid fa-sliders"></i> Customize Report Parameters & Save Configuration</h3>
+        <p class="text-muted" style="margin-bottom: 1.5rem;">Build custom report presets with specific filtering criteria and visible columns. Save them for quick retrieval and automated export.</p>
+
+        <form method="POST" action="{{ url_for('web.reports_view') }}" class="settings-form">
+            <input type="hidden" name="action_type" value="save_config">
+
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label class="form-label">Report Configuration Name *</label>
+                    <input type="text" name="report_name" required placeholder="e.g. Weekly Critical Stock & Expiry Audit" class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Report Category Type *</label>
+                    <select name="report_type" class="form-control">
+                        <option value="inventory">Inventory Catalogue Report</option>
+                        <option value="transactions">Stock Movement Transactions Report</option>
+                        <option value="alerts">Risk Intelligence & Alert Report</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-grid-3" style="margin-top: 1rem;">
+                <div class="form-group">
+                    <label class="form-label">Filter Category</label>
+                    <select name="category" class="form-control">
+                        <option value="all">All Categories</option>
+                        {% for cat in categories %}
+                            <option value="{{ cat }}">{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Filter Risk Severity</label>
+                    <select name="risk_level" class="form-control">
+                        <option value="all">All Severities</option>
+                        <option value="Critical">Critical Risk</option>
+                        <option value="High Risk">High Risk</option>
+                        <option value="Warning">Warning</option>
+                        <option value="Safe">Safe</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Transaction Movement Type</label>
+                    <select name="tx_type" class="form-control">
+                        <option value="all">All Transaction Types</option>
+                        <option value="STOCK_IN">STOCK_IN (Restock)</option>
+                        <option value="STOCK_OUT">STOCK_OUT (Dispense)</option>
+                        <option value="ADJUSTMENT">ADJUSTMENT (Audit)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Visible Columns Checkbox Selection -->
+            <div style="margin-top: 1.5rem;">
+                <label class="form-label" style="margin-bottom: 0.75rem; display: block;">Select Included Report Columns</label>
+                <div class="checkbox-options-grid">
+                    <label class="checkbox-item"><input type="checkbox" name="visible_columns" value="product_id" checked> Product ID / SKU</label>
+                    <label class="checkbox-item"><input type="checkbox" name="visible_columns" value="product_name" checked> Product Name</label>
+                    <label class="checkbox-item"><input type="checkbox" name="visible_columns" value="category" checked> Category</label>
+                    <label class="checkbox-item"><input type="checkbox" name="visible_columns" value="current_stock" checked> Current Stock</label>
+                    <label class="checkbox-item"><input type="checkbox" name="visible_columns" value="min_stock" checked> Minimum Safety Threshold</label>
+                    <label class="checkbox-item"><input type="checkbox" name="visible_columns" value="unit_price" checked> Unit Price</label>
+                    <label class="checkbox-item"><input type="checkbox" name="visible_columns" value="expiry_date" checked> Expiry Date</label>
+                    <label class="checkbox-item"><input type="checkbox" name="visible_columns" value="risk_level" checked> Risk Intelligence Level</label>
+                    <label class="checkbox-item"><input type="checkbox" name="visible_columns" value="status" checked> Active Status</label>
+                </div>
+            </div>
+
+            <div style="margin-top: 2rem;">
+                <button type="submit" class="btn btn-royal-purple">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Report Configuration
+                </button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- 6. SAVED REPORT CONFIGURATIONS TAB -->
+    {% if active_tab == 'saved' %}
+    <div class="reports-section-card" style="margin-top: 1.5rem;">
+        <div class="section-card-header">
+            <h3><i class="fa-solid fa-bookmark"></i> Saved Custom Report Presets</h3>
+            <a href="{{ url_for('web.reports_view', tab='customize') }}" class="btn btn-royal-purple">
+                <i class="fa-solid fa-plus"></i> Create New Custom Preset
+            </a>
+        </div>
+
+        {% if saved_reports %}
+            <div class="saved-reports-grid" style="margin-top: 1.25rem;">
+                {% for rpt in saved_reports %}
+                <div class="saved-report-card">
+                    <div class="saved-report-header">
+                        <div>
+                            <h4>{{ rpt.name }}</h4>
+                            <span class="badge badge-purple">{{ rpt.report_type|upper }} REPORT</span>
+                        </div>
+                        <form method="POST" action="{{ url_for('web.reports_view') }}" onsubmit="return confirm('Delete this saved report preset?');">
+                            <input type="hidden" name="action_type" value="delete_config">
+                            <input type="hidden" name="report_id" value="{{ rpt.id or rpt._id }}">
+                            <button type="submit" class="btn-icon text-burgundy" title="Delete Saved Preset" aria-label="Delete Saved Preset">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </form>
+                    </div>
+                    <div class="saved-report-meta">
+                        <div><i class="fa-solid fa-user-tie"></i> Created By: <strong>{{ rpt.created_by }}</strong></div>
+                        <div><i class="fa-regular fa-clock"></i> Saved Date: {{ rpt.created_at[:10] if rpt.created_at else 'N/A' }}</div>
+                    </div>
+                    <div class="saved-report-filters">
+                        <strong>Saved Filters:</strong>
+                        <span class="filter-tag">Category: {{ rpt.filters.category or 'All' }}</span>
+                        <span class="filter-tag">Risk: {{ rpt.filters.risk_level or 'All' }}</span>
+                        <span class="filter-tag">Type: {{ rpt.filters.tx_type or 'All' }}</span>
+                    </div>
+                    <div class="saved-report-actions">
+                        <a href="{{ url_for('web.reports_view', tab=rpt.report_type, category=rpt.filters.category, risk_level=rpt.filters.risk_level, tx_type=rpt.filters.tx_type) }}" class="btn btn-secondary-outline btn-block">
+                            <i class="fa-solid fa-folder-open"></i> Restore Filters & Preview Data
+                        </a>
+                        <a href="{{ url_for('web.export_filtered_csv', report_type=rpt.report_type, category=rpt.filters.category, risk_level=rpt.filters.risk_level, tx_type=rpt.filters.tx_type) }}" class="btn btn-royal-purple btn-block" style="margin-top: 0.5rem;">
+                            <i class="fa-solid fa-download"></i> Export Filtered CSV
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state" style="padding: 4rem 1.5rem; margin-top: 1rem;">
+                <i class="fa-solid fa-bookmark" style="font-size: 3rem; color: var(--text-dim); margin-bottom: 0.75rem;"></i>
+                <h4>No saved report configurations yet.</h4>
+                <p class="text-muted">Use the "Customize Report" tab above to build and save custom report presets for quick access.</p>
+                <a href="{{ url_for('web.reports_view', tab='customize') }}" class="btn btn-royal-purple" style="margin-top: 1rem;">
+                    <i class="fa-solid fa-sliders"></i> Customize & Save a Report
+                </a>
+            </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

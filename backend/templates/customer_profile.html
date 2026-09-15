@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile | Customer Portal{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+
+    <!-- Flash Notifications -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category if category != 'error' else 'danger' }}" style="padding: 0.75rem 1.25rem; margin-bottom: 1rem; border-radius: 6px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; font-size: 0.9rem;">
+            <i class="fa-solid fa-circle-check" style="margin-right: 0.5rem;"></i> {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <div>
+            <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-main, #f8fafc); margin-bottom: 0.25rem;">
+                Customer Account Profile
+            </h2>
+            <p style="color: var(--text-muted, #94a3b8); font-size: 0.9rem; margin: 0;">
+                Manage your personal customer profile information and password.
+            </p>
+        </div>
+        <a href="{{ url_for('web.customer_dashboard') }}" class="btn-action" style="padding: 0.5rem 1rem; background: var(--bg-hover); border: 1px solid var(--border-color); color: var(--text-main); text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Products
+        </a>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem;">
+        
+        <!-- Left Profile Overview Card -->
+        <div class="panel" style="text-align: center; padding: 2rem 1.5rem;">
+            <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #6366f1); color: #fff; font-size: 2.2rem; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);">
+                {{ session.get('user', {}).get('full_name', 'C')[0] | upper }}
+            </div>
+            <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.25rem; color: var(--text-main);">
+                {{ session.get('user', {}).get('full_name', session.get('user', {}).get('username', 'Customer')) }}
+            </h3>
+            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.85rem;">
+                {{ session.get('user', {}).get('email', '') }}
+            </div>
+            <span class="badge customer" style="padding: 0.3rem 0.8rem; font-size: 0.75rem; border-radius: 20px;">
+                CUSTOMER ACCOUNT
+            </span>
+
+            <div style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem; text-align: left; font-size: 0.85rem; color: var(--text-muted);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span>Account Role:</span>
+                    <strong style="color: var(--text-main);">Customer</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span>Username:</span>
+                    <strong style="color: var(--text-main);">{{ session.get('user', {}).get('username', '') }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>Status:</span>
+                    <span style="color: #34d399; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> Active</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Update Settings Panel -->
+        <div class="panel" style="padding: 2rem;">
+            <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1.25rem; color: var(--text-main);">
+                Update Account Information
+            </h3>
+
+            <form action="{{ url_for('web.update_profile') }}" method="POST">
+                <div class="form-group" style="margin-bottom: 1.25rem;">
+                    <label for="fullNameInput" style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem;">Full Name</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-user input-icon"></i>
+                        <input type="text" id="fullNameInput" name="full_name" class="form-control" value="{{ session.get('user', {}).get('full_name', '') }}" required style="padding-left: 2.3rem;">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1.25rem;">
+                    <label for="emailInput" style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem;">Email Address</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-envelope input-icon"></i>
+                        <input type="email" id="emailInput" class="form-control" value="{{ session.get('user', {}).get('email', '') }}" disabled style="padding-left: 2.3rem; opacity: 0.7; cursor: not-allowed;">
+                    </div>
+                    <small style="font-size: 0.75rem; color: var(--text-muted);">Email address cannot be changed directly.</small>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label for="newPasswordInput" style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem;">New Password (leave blank to keep unchanged)</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="newPasswordInput" name="new_password" class="form-control" placeholder="••••••••" style="padding-left: 2.3rem;">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <button type="submit" class="btn-action" style="padding: 0.6rem 1.25rem; background: var(--accent-color, #3b82f6); color: #fff; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem;">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Profile Changes
+                    </button>
+                    <a href="{{ url_for('web.customer_dashboard') }}" class="btn-action" style="padding: 0.6rem 1rem; background: var(--bg-hover); border: 1px solid var(--border-color); color: var(--text-muted); text-decoration: none; border-radius: 6px;">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+
+    </div>
+
+</div>
+{% block modals %}{% endblock %}
+{% endblock %}

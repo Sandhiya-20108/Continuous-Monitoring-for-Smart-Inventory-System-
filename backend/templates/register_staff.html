@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Staff Account | Continuous Monitoring for Smart Inventory System{% endblock %}
+
+{% block login_content %}
+<div class="login-split-container">
+    <!-- Left Hero Section -->
+    <div class="login-hero-side">
+        <div class="login-hero-overlay"></div>
+        
+        <div class="login-hero-content">
+            <div class="hero-brand-badge">
+                <i class="fa-solid fa-user-plus"></i> Staff Onboarding
+            </div>
+            
+            <h1>Smart Inventory <span>Staff Portal</span></h1>
+            <p class="login-hero-subtitle">Create your staff user account to access product catalog telemetry, stock availability, and profile features.</p>
+            
+            <div class="feature-bullets">
+                <div class="bullet-item">
+                    <div class="bullet-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
+                    <span>Browse Product Inventory</span>
+                </div>
+                <div class="bullet-item">
+                    <div class="bullet-icon"><i class="fa-solid fa-lock"></i></div>
+                    <span>Secure Role-Based Access</span>
+                </div>
+                <div class="bullet-item">
+                    <div class="bullet-icon"><i class="fa-solid fa-id-badge"></i></div>
+                    <span>Individual Staff Profile</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="hero-footer-text">
+            &copy; 2026 Smart Inventory Risk Intelligence & Continuous Monitoring Platform
+        </div>
+    </div>
+
+    <!-- Right Registration Panel -->
+    <div class="login-form-side">
+        <div class="login-card" style="max-width: 460px;">
+            <div class="login-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem;">
+                <div>
+                    <div class="login-logo-row">
+                        <i class="fa-solid fa-user-plus login-logo-icon" style="color: #38bdf8;"></i>
+                        <h2 class="login-title">Create Staff Account</h2>
+                    </div>
+                    <p class="login-subtitle">Fill in the details below to register your staff account</p>
+                </div>
+                <form action="{{ url_for('web.toggle_theme') }}" method="POST" style="margin:0;">
+                    <input type="hidden" name="redirect_url" value="{{ request.full_path }}">
+                    {% if session.get('theme', 'dark') == 'light' %}
+                    <button type="submit" class="theme-toggle-btn btn-header-action" title="Switch to dark mode" aria-label="Switch to dark mode">
+                        <i class="fa-solid fa-moon"></i>
+                    </button>
+                    {% else %}
+                    <button type="submit" class="theme-toggle-btn btn-header-action" title="Switch to light mode" aria-label="Switch to light mode">
+                        <i class="fa-solid fa-sun"></i>
+                    </button>
+                    {% endif %}
+                </form>
+            </div>
+
+            {% if error %}
+            <div class="login-alert-banner active" style="margin-bottom: 1.25rem;">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span>{{ error }}</span>
+            </div>
+            {% endif %}
+
+            <form class="login-form" action="{{ url_for('web.staff_register') }}" method="POST" autocomplete="off" style="display: flex; flex-direction: column; gap: 0.9rem;">
+                
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="regFullName">Full Name *</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-user input-icon"></i>
+                        <input type="text" id="regFullName" name="full_name" class="form-control" placeholder="e.g. Jane Doe" required value="{{ form_data.full_name if form_data else '' }}" autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="regEmail">Email Address *</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-envelope input-icon"></i>
+                        <input type="email" id="regEmail" name="email" class="form-control" placeholder="staff.name@inventory.com" required value="{{ form_data.email if form_data else '' }}" autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="regUsername">Username (Optional)</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-at input-icon"></i>
+                        <input type="text" id="regUsername" name="username" class="form-control" placeholder="e.g. janedoe" value="{{ form_data.username if form_data else '' }}" autocomplete="off">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="regPassword">Password *</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-lock input-icon"></i>
+                            <input type="password" id="regPassword" name="password" class="form-control" placeholder="Min 6 chars" required autocomplete="off">
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="regConfirmPassword">Confirm Password *</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-shield-halved input-icon"></i>
+                            <input type="password" id="regConfirmPassword" name="confirm_password" class="form-control" placeholder="Re-enter password" required autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 0.65rem; margin-top: 0.75rem;">
+                    <button type="submit" class="btn-login" style="background: linear-gradient(135deg, #3b82f6, #6366f1);">
+                        <i class="fa-solid fa-user-check"></i> Create Staff Account
+                    </button>
+
+                    <a href="{{ url_for('web.login_view', tab='staff') }}" class="btn-action" style="text-align: center; justify-content: center; padding: 0.65rem; background: var(--bg-hover, rgba(255,255,255,0.05)); border: 1px solid var(--border-color, rgba(255,255,255,0.12)); color: var(--text-muted, #94a3b8); text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 0.88rem; display: flex; align-items: center; gap: 0.4rem;">
+                        <i class="fa-solid fa-arrow-left"></i> Cancel / Back to Login
+                    </a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

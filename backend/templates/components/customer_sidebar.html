@@ -1,0 +1,43 @@
+<!-- Collapsible Sidebar Navigation for Customer -->
+<aside class="sidebar" id="sidebar">
+    <div>
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="fa-solid fa-store logo-icon"></i>
+                <span class="sidebar-title">Smart Catalog</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('web.customer_dashboard') }}" class="nav-item {% if current_view == 'customer_dashboard' %}active{% endif %}" data-tooltip="Products">
+                <i class="fa-solid fa-boxes-stacked"></i>
+                <span class="nav-text">Browse Products</span>
+            </a>
+            <a href="{{ url_for('web.customer_profile') }}" class="nav-item {% if current_view == 'customer_profile' %}active{% endif %}" data-tooltip="Profile">
+                <i class="fa-solid fa-user"></i>
+                <span class="nav-text">My Profile</span>
+            </a>
+        </nav>
+    </div>
+
+    <div class="sidebar-footer">
+        <div class="user-profile-card">
+            <div style="display: flex; align-items: center; gap: 0.6rem; overflow: hidden;">
+                <div class="user-avatar" style="background: linear-gradient(135deg, #3b82f6, #6366f1);">
+                    {{ session.get('user', {}).get('full_name', 'C')[0] | upper }}
+                </div>
+                <div class="user-details">
+                    <span class="user-name-text">{{ session.get('user', {}).get('full_name', session.get('user', {}).get('username', 'Customer')) }}</span>
+                    <span class="user-role-badge customer">
+                        CUSTOMER
+                    </span>
+                </div>
+            </div>
+            <form action="{{ url_for('web.logout') }}" method="POST" style="margin: 0;">
+                <button type="submit" class="btn-sidebar-logout" title="Log Out">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+</aside>

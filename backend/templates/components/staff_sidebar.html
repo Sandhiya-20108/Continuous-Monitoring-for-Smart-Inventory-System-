@@ -1,0 +1,59 @@
+<!-- Collapsible Sidebar Navigation for Staff Workspace -->
+<aside class="sidebar" id="sidebar">
+    <div>
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="fa-solid fa-boxes-stacked logo-icon" style="color: #34d399;"></i>
+                <span class="sidebar-title">Staff Portal</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('web.staff_dashboard') }}" class="nav-item {% if current_view == 'staff_dashboard' %}active{% endif %}" data-tooltip="Dashboard">
+                <i class="fa-solid fa-gauge-high"></i>
+                <span class="nav-text">Staff Dashboard</span>
+            </a>
+            <a href="{{ url_for('web.staff_products') }}" class="nav-item {% if current_view == 'staff_products' %}active{% endif %}" data-tooltip="Browse Products">
+                <i class="fa-solid fa-store"></i>
+                <span class="nav-text">Browse Products</span>
+            </a>
+            <a href="{{ url_for('web.staff_product_search') }}" class="nav-item {% if current_view == 'staff_product_search' %}active{% endif %}" data-tooltip="Search Products">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <span class="nav-text">Search Products</span>
+            </a>
+            <a href="{{ url_for('web.alerts') }}" class="nav-item {% if current_view == 'alerts' %}active{% endif %}" data-tooltip="Alerts Feed">
+                <i class="fa-solid fa-bell"></i>
+                <span class="nav-text">Alerts Feed</span>
+            </a>
+            <a href="{{ url_for('web.staff_transactions') }}" class="nav-item {% if current_view == 'staff_transactions' %}active{% endif %}" data-tooltip="Transactions">
+                <i class="fa-solid fa-receipt"></i>
+                <span class="nav-text">Audit Log</span>
+            </a>
+            <a href="{{ url_for('web.staff_profile') }}" class="nav-item {% if current_view == 'staff_profile' %}active{% endif %}" data-tooltip="My Profile">
+                <i class="fa-solid fa-user-gear"></i>
+                <span class="nav-text">My Profile</span>
+            </a>
+        </nav>
+    </div>
+
+    <div class="sidebar-footer">
+        <div class="user-profile-card">
+            <a href="{{ url_for('web.staff_profile') }}" style="display: flex; align-items: center; gap: 0.6rem; overflow: hidden; text-decoration: none; color: inherit; flex: 1;" title="View & Edit Staff Profile">
+                <div class="user-avatar" style="background: linear-gradient(135deg, #059669, #10b981);">
+                    {{ session.get('user', {}).get('full_name', 'S')[0] | upper }}
+                </div>
+                <div class="user-details">
+                    <span class="user-name-text">{{ session.get('user', {}).get('full_name', session.get('user', {}).get('username', 'Staff')) }}</span>
+                    <span class="user-role-badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);">
+                        STAFF
+                    </span>
+                </div>
+            </a>
+            <form action="{{ url_for('web.logout') }}" method="POST" style="margin: 0;">
+                <button type="submit" class="btn-sidebar-logout" title="Log Out">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+</aside>

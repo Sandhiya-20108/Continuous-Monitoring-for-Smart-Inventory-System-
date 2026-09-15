@@ -1,0 +1,93 @@
+<!-- Collapsible Sidebar Navigation for Admin Workspace -->
+<aside class="sidebar" id="sidebar">
+    <div>
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-icon-wrapper">
+                    <i class="fa-solid fa-boxes-stacked logo-icon"></i>
+                </div>
+                <div class="sidebar-brand-text">
+                    <span class="sidebar-title">SmartShelf</span>
+                    <span class="sidebar-subtitle">Inventory OS</span>
+                </div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('web.dashboard') }}" class="nav-item {% if current_view == 'dashboard' %}active{% endif %}" data-tooltip="Dashboard">
+                <i class="fa-solid fa-table-cells-large"></i>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            <a href="{{ url_for('web.inventory') }}" class="nav-item {% if current_view == 'inventory' %}active{% endif %}" data-tooltip="Inventory">
+                <i class="fa-solid fa-boxes-stacked"></i>
+                <span class="nav-text">Inventory</span>
+            </a>
+            <a href="{{ url_for('web.analytics') }}" class="nav-item {% if current_view == 'analytics' %}active{% endif %}" data-tooltip="Analytics">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span class="nav-text">Analytics</span>
+            </a>
+            <a href="{{ url_for('web.alerts') }}" class="nav-item {% if current_view == 'alerts' %}active{% endif %}" data-tooltip="Alerts">
+                <i class="fa-solid fa-bell"></i>
+                <span class="nav-text">Alerts</span>
+            </a>
+            <a href="{{ url_for('web.inventory', history_id='all') }}" class="nav-item {% if request.args.get('history_id') == 'all' %}active{% endif %}" data-tooltip="Transactions">
+                <i class="fa-solid fa-receipt"></i>
+                <span class="nav-text">Transactions</span>
+            </a>
+            <a href="{{ url_for('web.reports_view') }}" class="nav-item {% if current_view == 'reports' %}active{% endif %}" data-tooltip="Reports">
+                <i class="fa-solid fa-chart-column"></i>
+                <span class="nav-text">Reports</span>
+            </a>
+            {% if session.get('user') and session['user'].get('role') == 'admin' %}
+            <a href="{{ url_for('web.users') }}" class="nav-item {% if current_view == 'users' %}active{% endif %}" data-tooltip="Staff Management">
+                <i class="fa-solid fa-users-gear"></i>
+                <span class="nav-text">Staff Management</span>
+            </a>
+            {% endif %}
+            <a href="{{ url_for('web.admin_settings') }}" class="nav-item {% if current_view == 'settings' %}active{% endif %}" data-tooltip="Settings">
+                <i class="fa-solid fa-gear"></i>
+                <span class="nav-text">Settings</span>
+            </a>
+        </nav>
+
+        <!-- Dribbble-inspired Sidebar Alert Card -->
+        <div class="sidebar-alert-card">
+            <div class="sidebar-alert-header">
+                <div class="sidebar-alert-icon">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div class="sidebar-alert-title">Reorder needed</div>
+            </div>
+            <p class="sidebar-alert-text">
+                <strong>{{ (metrics.counts.low_stock if metrics and metrics.counts else 2) + (metrics.counts.critical if metrics and metrics.counts else 1) }} SKUs</strong> are below safety stock level.
+            </p>
+            <a href="{{ url_for('web.alerts') }}" class="btn-sidebar-review">
+                Review now
+            </a>
+        </div>
+    </div>
+
+    <div class="sidebar-footer">
+        <div class="user-profile-card">
+            <a href="{{ url_for('web.admin_settings') }}" style="display: flex; align-items: center; gap: 0.6rem; overflow: hidden; text-decoration: none; color: inherit; flex: 1;" title="View & Edit Admin Profile">
+                <div class="user-avatar">{{ session.get('user', {}).get('full_name', 'A')[0] | upper }}</div>
+                <div class="user-details">
+                    <span class="user-name-text">{{ session.get('user', {}).get('full_name', session.get('user', {}).get('username', 'Admin')) }}</span>
+                    <span class="user-role-badge {{ session.get('user', {}).get('role', 'admin') }}">
+                        ADMIN
+                    </span>
+                </div>
+            </a>
+            <div style="display: flex; gap: 0.3rem; align-items: center;">
+                <a href="{{ url_for('web.admin_settings') }}" class="btn-sidebar-logout" title="Admin Settings" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-user-gear"></i>
+                </a>
+                <form action="{{ url_for('web.logout') }}" method="POST" style="margin: 0;">
+                    <button type="submit" class="btn-sidebar-logout" title="Log Out">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</aside>

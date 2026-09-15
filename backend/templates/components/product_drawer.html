@@ -1,0 +1,94 @@
+{% if drawer_product %}
+<!-- PRODUCT DETAIL SIDE DRAWER (SERVER-SIDE RENDERED) -->
+<div class="drawer-overlay active" id="productDetailDrawer">
+    <div class="drawer-content">
+        <div class="drawer-header">
+            <div>
+                <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--text-main);">{{ drawer_product.name }}</h2>
+                <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: 600;">SKU: {{ drawer_product.sku }}</span>
+            </div>
+            <a href="{{ close_drawer_url | default(request.path) }}" class="drawer-close" title="Close Drawer">&times;</a>
+        </div>
+
+{% if session.get('user', {}).get('role') == 'customer' %}
+        <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(99, 102, 241, 0.1); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid rgba(99, 102, 241, 0.2); margin-bottom: 1rem;">
+            <div>
+                <span style="font-size: 0.78rem; color: var(--text-muted);">Catalog Unit Price</span>
+                <div style="font-size: 1.4rem; font-weight: 800; color: #38bdf8;">${{ "%.2f" | format(drawer_product.unit_price) }}</div>
+            </div>
+            <div>
+                {% if drawer_product.current_stock <= 0 or drawer_product.expiry_info.days_remaining <= 0 %}
+                <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                    Out of Stock
+                </span>
+                {% else %}
+                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                    {{ drawer_product.current_stock }} {{ drawer_product.unit }} Available
+                </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div>
+            <h4 style="font-size: 0.9rem; color: var(--text-main); margin-bottom: 0.6rem; font-weight: 700;">Product Details</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.85rem; background: var(--bg-hover, rgba(255,255,255,0.03)); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                <div><span style="color: var(--text-muted);">Category:</span> <strong style="color: var(--text-main);">{{ drawer_product.category }}</strong></div>
+                <div><span style="color: var(--text-muted);">Unit Price:</span> <strong style="color: var(--text-main);">${{ "%.2f" | format(drawer_product.unit_price) }}</strong></div>
+                <div><span style="color: var(--text-muted);">Availability:</span> <strong style="color: var(--text-main);">{{ drawer_product.current_stock }} {{ drawer_product.unit }}</strong></div>
+                <div><span style="color: var(--text-muted);">Location:</span> <strong style="color: var(--text-main);">{{ drawer_product.location | default('Standard Warehouse') }}</strong></div>
+            </div>
+        </div>
+{% else %}
+        <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-surface-hover); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <div>
+                <span style="font-size: 0.78rem; color: var(--text-muted);">Risk Intelligence Level</span>
+                <div style="font-size: 1.1rem; font-weight: 800; color: var(--text-main);">{{ (drawer_product.risk_level | default('Safe')) | upper }}</div>
+            </div>
+            <div class="risk-pill {{ (drawer_product.risk_level | default('Safe')) | replace(' ', '-') }}">
+                Score: <span>{{ "%.1f"|format(drawer_product.risk_score | default(0.0)) }}</span>
+            </div>
+        </div>
+
+        <div>
+            <h4 style="font-size: 0.85rem; color: var(--primary-cyan); margin-bottom: 0.6rem;">Stock & Expiry Metrics</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.82rem;">
+                <div><span>Current Stock:</span> <strong>{{ drawer_product.current_stock }} {{ drawer_product.unit }}</strong></div>
+                <div><span>Safety Min:</span> <strong>{{ drawer_product.min_stock }} {{ drawer_product.unit }}</strong></div>
+                <div><span>Avg Usage:</span> <strong>{{ drawer_product.average_daily_usage }} / day</strong></div>
+                <div><span>Stockout:</span> <strong>{{ drawer_product.days_to_stockout }} days</strong></div>
+                <div><span>Expiry Date:</span> <strong>{{ drawer_product.expiry_date | default('--') }}</strong></div>
+                <div><span>Demand Trend:</span> <strong>{{ drawer_product.demand_trend | default('Stable') }}</strong></div>
+            </div>
+        </div>
+
+        <div>
+            <h4 style="font-size: 0.85rem; color: var(--primary-cyan); margin-bottom: 0.6rem;">Predictive Consumption Timeline</h4>
+            <div class="consumption-timeline">
+                <div class="timeline-step {% if drawer_product.current_stock > drawer_product.min_stock %}safe{% else %}critical{% endif %}">
+                    <span class="timeline-title">1. Current Stock Available</span>
+                    <span class="timeline-desc">{{ drawer_product.current_stock }} {{ drawer_product.unit }} available in {{ drawer_product.location | default('Warehouse Main') }}. Safety min threshold is {{ drawer_product.min_stock }} {{ drawer_product.unit }}.</span>
+                </div>
+                <div class="timeline-step">
+                    <span class="timeline-title">2. Projected Consumption Rate</span>
+                    <span class="timeline-desc">Average daily usage rate is {{ drawer_product.average_daily_usage }} {{ drawer_product.unit }}/day with {{ drawer_product.demand_trend | default('Stable') }} trend.</span>
+                </div>
+                <div class="timeline-step {% if drawer_product.days_to_stockout <= 3 %}critical{% endif %}">
+                    <span class="timeline-title">3. Predicted Stockout Proximity</span>
+                    <span class="timeline-desc">
+                        {% if drawer_product.days_to_stockout <= 0 %}
+                        CRITICAL: Item is currently OUT OF STOCK!
+                        {% else %}
+                        Stock depletion predicted in {{ drawer_product.days_to_stockout }} days based on telemetry data.
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="timeline-step">
+                    <span class="timeline-title">4. Recommended Action</span>
+                    <span class="timeline-desc">{{ drawer_product.recommendation | default('Continuous monitoring active.') }}</span>
+                </div>
+            </div>
+        </div>
+{% endif %}
+    </div>
+</div>
+{% endif %}

@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}Telemetry Analytics | Continuous Monitoring for Smart Inventory System{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+        <div>
+            <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-chart-line" style="color: var(--primary-accent);"></i> Advanced Telemetry & Stock Analytics
+            </h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.2rem;">Multi-dimensional analysis of consumption rates, stockout risks, category distribution, and telemetry metrics.</p>
+        </div>
+        <a href="{{ url_for('web.export_report') }}" class="btn-header-action" style="background: var(--primary-accent); border-color: var(--primary-accent); color: #ffffff;">
+            <i class="fa-solid fa-file-export"></i> Export Report
+        </a>
+    </div>
+
+    <!-- Analytics Key Metrics Summary -->
+    <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+        <div class="kpi-card" style="border-top: 3px solid var(--primary-accent);">
+            <div class="kpi-header"><span>Monitored Assets</span><i class="fa-solid fa-boxes-stacked kpi-icon" style="color: var(--primary-accent);"></i></div>
+            <div class="kpi-value">{{ metrics.total_products | default(0) }}</div>
+            <div class="kpi-subtext">Active telemetry items</div>
+        </div>
+        <div class="kpi-card" style="border-top: 3px solid #16a34a;">
+            <div class="kpi-header"><span>Inventory Valuation</span><i class="fa-solid fa-vault kpi-icon" style="color: #16a34a;"></i></div>
+            <div class="kpi-value" style="color: #16a34a;">${{ "{:,.2f}".format(metrics.total_inventory_value | default(0.0)) }}</div>
+            <div class="kpi-subtext">Total catalog asset value</div>
+        </div>
+        <div class="kpi-card" style="border-top: 3px solid var(--gold-highlight, #d4a72c);">
+            <div class="kpi-header"><span>Health Score</span><i class="fa-solid fa-heart-pulse kpi-icon" style="color: var(--gold-highlight, #d4a72c);"></i></div>
+            <div class="kpi-value" style="color: var(--gold-highlight, #d4a72c);">{{ "%.0f"|format(metrics.health_score | default(100.0)) }}%</div>
+            <div class="kpi-subtext">System stability rating</div>
+        </div>
+        <div class="kpi-card" style="border-top: 3px solid var(--secondary-burgundy, #be123c);">
+            <div class="kpi-header"><span>Critical & Low Stock</span><i class="fa-solid fa-triangle-exclamation kpi-icon" style="color: var(--secondary-burgundy, #be123c);"></i></div>
+            <div class="kpi-value" style="color: var(--secondary-burgundy, #be123c);">{{ (metrics.counts.critical | default(0)) + (metrics.counts.low_stock | default(0)) }}</div>
+            <div class="kpi-subtext">Requires replenishment</div>
+        </div>
+    </div>
+
+    <!-- Analytics Charts Split Grid -->
+    <div class="dashboard-split-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;">
+        <!-- 1. Category Distribution CSS Chart -->
+        <div style="background: var(--bg-surface-hover, rgba(255,255,255,0.03)); padding: 1.25rem; border-radius: var(--radius-md, 12px); border: 1px solid var(--border-color);">
+            <h4 style="font-size: 1rem; color: var(--text-main); font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-layer-group" style="color: var(--primary-accent);"></i> Category Inventory Breakdown
+            </h4>
+
+            {% if metrics.category_breakdown %}
+                <div class="css-bar-chart" style="display: flex; flex-direction: column; gap: 0.85rem;">
+                    {% for cat, count in metrics.category_breakdown.items() %}
+                    {% set cat_pct = (count / metrics.total_products * 100) if metrics.total_products > 0 else 0 %}
+                    <div class="css-bar-row">
+                        <div class="css-bar-header" style="display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.25rem;">
+                            <span>{{ cat }}</span>
+                            <span>{{ count }} Items ({{ "%.1f"|format(cat_pct) }}%)</span>
+                        </div>
+                        <div class="css-bar-track" style="height: 8px; background: var(--bg-surface); border-radius: 4px; overflow: hidden; border: 1px solid var(--border-color);">
+                            <div class="css-bar-fill" style="--width: {{ '%.1f'|format(cat_pct) }}%; background: var(--primary-accent); height: 100%; border-radius: 4px;"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state" style="padding: 2rem 1rem; text-align: center;">
+                    <i class="fa-solid fa-folder-open" style="font-size: 1.5rem; color: var(--text-dim);"></i>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">No category analytics available.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- 2. System Risk Factors & Weights -->
+        <div style="background: var(--bg-surface-hover, rgba(255,255,255,0.03)); padding: 1.25rem; border-radius: var(--radius-md, 12px); border: 1px solid var(--border-color);">
+            <h4 style="font-size: 1rem; color: var(--text-main); font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-shield-cat" style="color: var(--gold-highlight, #d4a72c);"></i> Telemetry Risk Engine Weightings
+            </h4>
+
+            <div style="display: flex; flex-direction: column; gap: 0.85rem; font-size: 0.85rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.6rem;">
+                    <span>Stock Deficit Coefficient:</span>
+                    <strong style="color: var(--text-main);">35.0 Pts Max</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.6rem;">
+                    <span>Stockout Proximity Weight:</span>
+                    <strong style="color: var(--text-main);">25.0 Pts Max</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.6rem;">
+                    <span>Expiry Proximity Weight:</span>
+                    <strong style="color: var(--text-main);">20.0 Pts Max</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.6rem;">
+                    <span>Consumption Surge Anomaly:</span>
+                    <strong style="color: var(--text-main);">20.0 Pts Max</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 700; color: var(--primary-accent); padding-top: 0.2rem;">
+                    <span>Total Calculated Risk Cap:</span>
+                    <span>100.0 Score Points</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

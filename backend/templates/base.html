@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Continuous Monitoring for Smart Inventory System{% endblock %}</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Design System CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body class="role-{{ session.get('user', {}).get('role', 'admin') }} {{ session.get('theme', 'dark') }}-theme" data-theme="{{ session.get('theme', 'dark') }}" data-role="{{ session.get('user', {}).get('role', 'admin') }}">
+
+    {% if session.get('user') %}
+    <!-- MAIN ENTERPRISE APPLICATION SHELL -->
+    <div class="app-shell">
+        {% if session.get('user', {}).get('role') == 'admin' %}
+            {% include 'components/sidebar.html' %}
+        {% elif session.get('user', {}).get('role') == 'customer' %}
+            {% include 'components/customer_sidebar.html' %}
+        {% else %}
+            {% include 'components/staff_sidebar.html' %}
+        {% endif %}
+        
+        <div class="main-content">
+            {% if session.get('user', {}).get('role') == 'admin' %}
+                {% include 'components/header.html' %}
+            {% elif session.get('user', {}).get('role') == 'customer' %}
+                {% include 'components/customer_header.html' %}
+            {% else %}
+                {% include 'components/staff_header.html' %}
+            {% endif %}
+
+            <div class="page-view active">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                    <div style="margin-bottom: 1rem;">
+                      {% for category, message in messages %}
+                        {% if category in ['error', 'danger'] %}
+                        <div class="alert alert-danger" style="padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 0.5rem; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #f87171;">
+                          {{ message }}
+                        </div>
+                        {% else %}
+                        <div class="alert alert-success" style="padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 0.5rem; background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399;">
+                          {{ message }}
+                        </div>
+                        {% endif %}
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                {% endwith %}
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals & Drawers rendered server-side when target query params exist -->
+    {% include 'components/product_drawer.html' %}
+    {% if session.get('user', {}).get('role') == 'admin' %}
+        {% include 'components/product_modal.html' %}
+        {% include 'components/stock_modal.html' %}
+        {% include 'components/history_modal.html' %}
+    {% endif %}
+    {% include 'components/profile_modal.html' %}
+
+    {% else %}
+    <!-- LOGIN PAGE VIEW -->
+    {% block login_content %}{% endblock %}
+    {% endif %}
+
+</body>
+</html>
