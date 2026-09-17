@@ -4317,6 +4317,374 @@ body.light-theme.role-admin .activity-prod {
     gap: 0.75rem;
 }
 
+/* ==========================================================================
+   DRIBBBLE HEADER BANNER BASE STYLES
+   ========================================================================== */
+.dribbble-header-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #111C2E;
+    border: 1px solid #263449;
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    transition: all var(--transition-fast);
+}
+
+.banner-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #F8FAFC;
+}
+
+.banner-subtitle {
+    font-size: 0.85rem;
+    margin-top: 0.2rem;
+    color: #94A3B8;
+}
+
+.banner-health-group {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.health-score-label {
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--secondary-teal, #14B8A6);
+    letter-spacing: 0.05em;
+}
+
+.health-score-value {
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: #F8FAFC;
+}
+
+.health-pulse-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(20, 184, 166, 0.15);
+    border: 1px solid #14B8A6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #14B8A6;
+    font-size: 1.2rem;
+}
+
+/* ==========================================================================
+   COMPREHENSIVE PREMIUM LIGHT THEME OVERRIDES
+   ========================================================================== */
+
+body.light-theme,
+body[data-theme="light"] {
+    --bg-main: #F4F6F9;
+    --bg-sidebar: #FFFFFF;
+    --bg-surface: #FFFFFF;
+    --bg-surface-hover: #F8FAFC;
+    --bg-card: #FFFFFF;
+    --border-color: #E2E8F0;
+    --border-highlight: rgba(124, 58, 237, 0.3);
+    
+    --text-main: #0F172A;
+    --text-muted: #475569;
+    --text-dim: #64748B;
+    
+    --color-safe: #16A34A;
+    --color-safe-bg: #ECFDF5;
+    --color-warning: #D97706;
+    --color-warning-bg: #FFFBEB;
+    --color-high: #BE123C;
+    --color-high-bg: #FFF1F2;
+    --color-critical: #DC2626;
+    --color-critical-bg: #FEF2F2;
+}
+
+/* 1. Header & Banner in Light Theme */
+body.light-theme .dribbble-header-banner {
+    background: #FFFFFF;
+    border-color: #E2E8F0;
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
+}
+
+body.light-theme .banner-title {
+    color: #0F172A;
+}
+
+body.light-theme .banner-subtitle {
+    color: #475569;
+}
+
+body.light-theme .health-score-value {
+    color: #0F172A;
+}
+
+body.light-theme .health-pulse-icon {
+    background: #E6FFFA;
+    border-color: #0D9488;
+    color: #0D9488;
+}
+
+/* 2. Top KPI Cards Grid in Light Theme */
+body.light-theme .dribbble-kpi-card {
+    background: #FFFFFF;
+    border-color: #E2E8F0;
+    box-shadow: 0 4px 15px rgba(15, 23, 42, 0.04);
+}
+
+body.light-theme .dribbble-kpi-card:hover {
+    border-color: #CBD5E1;
+    box-shadow: 0 8px 25px rgba(15, 23, 42, 0.08);
+}
+
+body.light-theme .kpi-meta-label {
+    color: #64748B;
+}
+
+body.light-theme .kpi-main-number {
+    color: #0F172A;
+}
+
+/* 3. Analytics Grid & Cards in Light Theme */
+body.light-theme .dribbble-card {
+    background: #FFFFFF;
+    border-color: #E2E8F0;
+    box-shadow: 0 4px 15px rgba(15, 23, 42, 0.04);
+}
+
+body.light-theme .card-title-heading {
+    color: #0F172A;
+}
+
+body.light-theme .card-sub-heading {
+    color: #64748B;
+}
+
+/* Time dropdown */
+body.light-theme .time-select-pill {
+    background: #F8FAFC;
+    border-color: #CBD5E1;
+    color: #334155;
+}
+
+body.light-theme .time-select-dropdown {
+    color: #0F172A;
+}
+
+body.light-theme .time-select-dropdown option {
+    background: #FFFFFF;
+    color: #0F172A;
+}
+
+/* Flow chart pills & container */
+body.light-theme .flow-stat-pill {
+    background: #F8FAFC;
+    border-color: #E2E8F0;
+}
+
+body.light-theme .pill-label {
+    color: #475569;
+}
+
+body.light-theme .pill-value {
+    color: #0F172A;
+}
+
+body.light-theme .flow-chart-container {
+    background: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
+    border-color: #E2E8F0;
+}
+
+body.light-theme .svg-grid-line {
+    stroke: #E2E8F0;
+}
+
+body.light-theme circle[fill="#0F172A"] {
+    fill: #FFFFFF !important;
+}
+
+body.light-theme .flow-months-axis {
+    border-top-color: #E2E8F0;
+}
+
+body.light-theme .month-axis-link {
+    color: #64748B;
+}
+
+body.light-theme .month-axis-link:hover {
+    color: #0F172A;
+    background: #E2E8F0;
+}
+
+body.light-theme .month-axis-link.active-month {
+    color: #B45309;
+    border-bottom-color: #D97706;
+    background: #FEF3C7;
+    box-shadow: 0 2px 8px rgba(217, 119, 6, 0.15);
+}
+
+/* 4. Top Categories Donut & Items in Light Theme */
+body.light-theme .donut-svg circle[stroke="#1E293B"] {
+    stroke: #E2E8F0 !important;
+}
+
+body.light-theme .donut-center-number {
+    color: #0F172A;
+}
+
+body.light-theme .donut-center-label {
+    color: #64748B;
+}
+
+body.light-theme .category-item-card {
+    background: #F8FAFC;
+    border-color: #E2E8F0;
+}
+
+body.light-theme .category-item-card:hover {
+    background: #F1F5F9;
+    border-color: #CBD5E1;
+}
+
+body.light-theme .top-category-highlight {
+    background: linear-gradient(90deg, #FEF3C7 0%, #F8FAFC 100%);
+    border-color: #FDE68A;
+}
+
+body.light-theme .cat-item-name {
+    color: #0F172A;
+}
+
+body.light-theme .cat-item-sub {
+    color: #64748B;
+}
+
+body.light-theme .cat-item-stock {
+    color: #0F172A;
+}
+
+body.light-theme .cat-item-pct {
+    color: #0D9488;
+}
+
+/* 5. Inventory Table in Light Theme */
+body.light-theme .btn-dribbble-outline {
+    background: #F8FAFC;
+    border-color: #CBD5E1;
+    color: #334155;
+}
+
+body.light-theme .btn-dribbble-outline:hover {
+    background: #7C3AED;
+    border-color: #7C3AED;
+    color: #FFFFFF;
+}
+
+body.light-theme .dribbble-table th {
+    background: #F8FAFC;
+    color: #475569;
+    border-bottom-color: #E2E8F0;
+}
+
+body.light-theme .dribbble-table td {
+    border-bottom-color: #F1F5F9;
+    color: #0F172A;
+}
+
+body.light-theme .dribbble-table tbody tr:hover {
+    background-color: #F8FAFC;
+}
+
+body.light-theme .sku-cell {
+    color: #64748B;
+}
+
+body.light-theme .product-name {
+    color: #0F172A;
+}
+
+body.light-theme .product-thumb {
+    background: #F1F5F9;
+    border-color: #E2E8F0;
+    color: #0D9488;
+}
+
+body.light-theme .category-tag {
+    background: #F1F5F9;
+    border-color: #E2E8F0;
+    color: #475569;
+}
+
+body.light-theme .stock-qty {
+    color: #0F172A;
+}
+
+body.light-theme .location-text {
+    color: #64748B;
+}
+
+body.light-theme .btn-table-action {
+    color: #64748B;
+}
+
+body.light-theme .btn-table-action:hover {
+    color: #0F172A;
+}
+
+/* 6. Lower Grid & Activity in Light Theme */
+body.light-theme .sim-results-card,
+body.light-theme .activity-item {
+    background: #F8FAFC;
+    border-color: #E2E8F0;
+}
+
+body.light-theme .sim-res-row {
+    color: #475569;
+}
+
+body.light-theme .activity-prod {
+    color: #0F172A;
+}
+
+body.light-theme .activity-meta {
+    color: #64748B;
+}
+
+/* 7. Comprehensive Inline Style Color Overrides for Light Theme */
+body.light-theme [style*="color: #F8FAFC"],
+body.light-theme [style*="color: #f8fafc"],
+body.light-theme [style*="color:#F8FAFC"],
+body.light-theme [style*="color:#f8fafc"] {
+    color: #0F172A !important;
+}
+
+body.light-theme [style*="color: #94A3B8"],
+body.light-theme [style*="color: #94a3b8"],
+body.light-theme [style*="color:#94A3B8"],
+body.light-theme [style*="color:#94a3b8"] {
+    color: #475569 !important;
+}
+
+body.light-theme [style*="background: #111C2E"],
+body.light-theme [style*="background:#111C2E"],
+body.light-theme [style*="background: #0B1220"],
+body.light-theme [style*="background:#0B1220"],
+body.light-theme [style*="background: #0b0f19"],
+body.light-theme [style*="background:#0b0f19"] {
+    background: #FFFFFF !important;
+    border-color: #E2E8F0 !important;
+}
+
+body.light-theme [style*="background: #0B1220"],
+body.light-theme [style*="background:#0B1220"] {
+    background: #F8FAFC !important;
+    border-color: #E2E8F0 !important;
+}
+
 
 
 

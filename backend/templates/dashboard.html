@@ -6,17 +6,17 @@
 <div class="dribbble-dashboard-container">
 
     <!-- Overview Banner with Time-based Greeting, Current Date & Overall Inventory Health Score -->
-    <div class="dribbble-header-banner" style="display: flex; justify-content: space-between; align-items: center; background: #111C2E; border: 1px solid #263449; border-radius: 16px; padding: 1.25rem 1.5rem;">
+    <div class="dribbble-header-banner">
         <div>
-            <h2 style="font-size: 1.3rem; font-weight: 700; color: #F8FAFC;">{{ greeting }}, {{ session.get('user', {}).get('full_name', 'Administrator') }}</h2>
-            <p class="text-muted" style="font-size: 0.85rem; margin-top: 0.2rem;">{{ current_date }} &bull; Real-time continuous telemetry monitoring active.</p>
+            <h2 class="banner-title">{{ greeting }}, {{ session.get('user', {}).get('full_name', 'Administrator') }}</h2>
+            <p class="banner-subtitle">{{ current_date }} &bull; Real-time continuous telemetry monitoring active.</p>
         </div>
-        <div style="display: flex; align-items: center; gap: 1.5rem;">
+        <div class="banner-health-group">
             <div style="text-align: right;">
-                <div style="font-size: 0.74rem; text-transform: uppercase; font-weight: 700; color: var(--secondary-teal, #14B8A6); letter-spacing: 0.05em;">Overall Inventory Health</div>
-                <div style="font-size: 1.45rem; font-weight: 800; color: #F8FAFC;">{{ "%.0f"|format(metrics.health_score | default(100.0)) }}%</div>
+                <div class="health-score-label">Overall Inventory Health</div>
+                <div class="health-score-value">{{ "%.0f"|format(metrics.health_score | default(100.0)) }}%</div>
             </div>
-            <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(20, 184, 166, 0.15); border: 1px solid #14B8A6; display: flex; align-items: center; justify-content: center; color: #14B8A6; font-size: 1.2rem;">
+            <div class="health-pulse-icon">
                 <i class="fa-solid fa-heart-pulse"></i>
             </div>
         </div>
