@@ -4654,35 +4654,203 @@ body.light-theme .activity-meta {
     color: #64748B;
 }
 
-/* 7. Comprehensive Inline Style Color Overrides for Light Theme */
-body.light-theme [style*="color: #F8FAFC"],
-body.light-theme [style*="color: #f8fafc"],
-body.light-theme [style*="color:#F8FAFC"],
-body.light-theme [style*="color:#f8fafc"] {
+/* 7. Staff Workspace & Login Left Hero Scoped High-Contrast Rules */
+
+/* Left Login Hero Side - Must ALWAYS stay dark navy with bright white/cyan text */
+body.light-theme .login-hero-side,
+body[data-theme="light"] .login-hero-side {
+    background: url('../img/warehouse_hero_bg.jpg') center/cover no-repeat;
+    color: #F8FAFC !important;
+}
+
+body.light-theme .login-hero-overlay,
+body[data-theme="light"] .login-hero-overlay {
+    background: linear-gradient(135deg, rgba(11, 19, 41, 0.94) 0%, rgba(17, 28, 56, 0.92) 100%) !important;
+}
+
+body.light-theme .login-hero-content h1,
+body[data-theme="light"] .login-hero-content h1 {
+    color: #FFFFFF !important;
+}
+
+body.light-theme .login-hero-subtitle,
+body[data-theme="light"] .login-hero-subtitle {
+    color: #CBD5E1 !important;
+}
+
+body.light-theme .bullet-item span,
+body[data-theme="light"] .bullet-item span {
+    color: #F8FAFC !important;
+}
+
+body.light-theme .bullet-icon,
+body[data-theme="light"] .bullet-icon {
+    background: rgba(124, 58, 237, 0.25) !important;
+    color: #A78BFA !important;
+    border: 1px solid rgba(124, 58, 237, 0.4) !important;
+}
+
+body.light-theme .hero-brand-badge,
+body[data-theme="light"] .hero-brand-badge {
+    background: rgba(124, 58, 237, 0.2) !important;
+    color: #C4B5FD !important;
+    border: 1px solid rgba(124, 58, 237, 0.4) !important;
+}
+
+body.light-theme .hero-footer-text,
+body[data-theme="light"] .hero-footer-text {
+    color: #94A3B8 !important;
+}
+
+/* Staff Workspace Hero Banner Base & Light Mode */
+.staff-hero-banner {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(15, 23, 42, 0.95) 100%);
+    border-radius: 12px;
+    padding: 1.75rem 2rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    transition: all var(--transition-fast);
+}
+
+.staff-hero-badge {
+    margin-bottom: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.75rem;
+    font-weight: 600;
+    border-radius: 20px;
+    background: rgba(16, 185, 129, 0.2);
+    color: #34D399;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.staff-hero-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #F8FAFC;
+    margin-bottom: 0.5rem;
+}
+
+.staff-hero-subtitle {
+    color: #94A3B8;
+    font-size: 0.95rem;
+    max-width: 650px;
+    margin: 0;
+}
+
+body.light-theme .staff-hero-banner {
+    background: linear-gradient(135deg, #ECFDF5 0%, #FFFFFF 100%);
+    border-color: #A7F3D0;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.08);
+}
+
+body.light-theme .staff-hero-badge {
+    background: #D1FAE5;
+    color: #047857;
+    border-color: #6EE7B7;
+}
+
+body.light-theme .staff-hero-title {
+    color: #065F46;
+}
+
+body.light-theme .staff-hero-subtitle {
+    color: #334155;
+}
+
+/* Metric Cards Base & Light Theme */
+.metric-card {
+    background: var(--bg-card, #111C2E);
+    border: 1px solid var(--border-color, #263449);
+    border-radius: 10px;
+    padding: 1.25rem;
+    transition: all var(--transition-fast);
+}
+
+.metric-card-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.metric-card-value {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+.metric-card-sub {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+}
+
+body.light-theme .metric-card {
+    background: #FFFFFF;
+    border-color: #E2E8F0;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+body.light-theme .metric-card-label {
+    color: #475569;
+}
+
+body.light-theme .metric-card-value {
+    color: #0F172A;
+}
+
+body.light-theme .metric-card-sub {
+    color: #64748B;
+}
+
+/* Right Panel Login Form & Demo Cards in Light Theme */
+body.light-theme .login-card {
+    background: #FFFFFF;
+    border-color: #E2E8F0;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+body.light-theme .login-title {
+    color: #0F172A;
+}
+
+body.light-theme .login-subtitle {
+    color: #475569;
+}
+
+body.light-theme .admin-login-section {
+    background: #F0F9FF !important;
+    border-color: #BAE6FD !important;
+}
+
+body.light-theme .staff-login-section {
+    background: #ECFDF5 !important;
+    border-color: #A7F3D0 !important;
+}
+
+body.light-theme .admin-login-section h3,
+body.light-theme .staff-login-section h3 {
     color: #0F172A !important;
 }
 
-body.light-theme [style*="color: #94A3B8"],
-body.light-theme [style*="color: #94a3b8"],
-body.light-theme [style*="color:#94A3B8"],
-body.light-theme [style*="color:#94a3b8"] {
-    color: #475569 !important;
+body.light-theme [href*="demo_admin_login"] {
+    background: #EFF6FF !important;
+    border-color: #BFDBFE !important;
+    color: #1D4ED8 !important;
 }
 
-body.light-theme [style*="background: #111C2E"],
-body.light-theme [style*="background:#111C2E"],
-body.light-theme [style*="background: #0B1220"],
-body.light-theme [style*="background:#0B1220"],
-body.light-theme [style*="background: #0b0f19"],
-body.light-theme [style*="background:#0b0f19"] {
-    background: #FFFFFF !important;
-    border-color: #E2E8F0 !important;
+body.light-theme [href*="demo_staff_login"] {
+    background: #ECFDF5 !important;
+    border-color: #A7F3D0 !important;
+    color: #047857 !important;
 }
 
-body.light-theme [style*="background: #0B1220"],
-body.light-theme [style*="background:#0B1220"] {
-    background: #F8FAFC !important;
-    border-color: #E2E8F0 !important;
+body.light-theme [href*="staff_register_view"] {
+    background: #F3E8FF !important;
+    border-color: #DDD6FE !important;
+    color: #6D28D9 !important;
 }
 
 

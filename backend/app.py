@@ -10,6 +10,7 @@ from backend.config import Config
 from backend.routes.inventory import inventory_bp
 from backend.routes.auth import auth_bp
 from backend.routes.web_routes import web_bp
+from backend.utils.theme_helpers import get_current_theme, get_theme_styles, get_theme_class
 
 def create_app():
     backend_dir = os.path.dirname(os.path.abspath(__file__))
@@ -23,6 +24,15 @@ def create_app():
 
     # Enable CORS for frontend clients if needed
     CORS(app, resources={r"/api/*": {"origins": "*"}})
+
+    # Register Python Theme Context Processor for templates
+    @app.context_processor
+    def inject_theme_helpers():
+        return {
+            "current_theme": get_current_theme(),
+            "theme_config": get_theme_styles(),
+            "get_theme_class": get_theme_class
+        }
 
     # Register blueprints
     app.register_blueprint(web_bp)

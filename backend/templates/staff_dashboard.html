@@ -17,15 +17,15 @@
     {% endwith %}
 
     <!-- Welcome Staff Hero Banner -->
-    <div class="dashboard-banner" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(15, 23, 42, 0.95) 100%); border-radius: 12px; padding: 1.75rem 2rem; margin-bottom: 1.5rem; position: relative; overflow: hidden; border: 1px solid rgba(16, 185, 129, 0.25);">
+    <div class="staff-hero-banner">
         <div style="position: relative; z-index: 2;">
-            <div class="badge badge-info" style="margin-bottom: 0.75rem; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.75rem; font-weight: 600; border-radius: 20px; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4);">
+            <div class="staff-hero-badge">
                 <i class="fa-solid fa-id-badge"></i> Staff Workspace Overview
             </div>
-            <h2 style="font-size: 1.75rem; font-weight: 700; color: #f8fafc; margin-bottom: 0.5rem;">
+            <h2 class="staff-hero-title">
                 {{ greeting }}, {{ session.get('user', {}).get('full_name', 'Staff Member') }}!
             </h2>
-            <p style="color: #94a3b8; font-size: 0.95rem; max-width: 650px; margin: 0;">
+            <p class="staff-hero-subtitle">
                 Welcome to your Staff Workspace. Monitor current stock summaries, recent activity logs, and permitted inventory alerts.
             </p>
         </div>
@@ -61,43 +61,43 @@
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem;">
         
         <!-- Total Products Card -->
-        <div class="metric-card" style="background: var(--card-bg, rgba(30, 41, 59, 0.5)); border: 1px solid var(--border-color, rgba(255,255,255,0.08)); border-radius: 10px; padding: 1.25rem;">
+        <div class="metric-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Catalog Items</span>
-                <i class="fa-solid fa-boxes-stacked" style="color: #60a5fa; font-size: 1.2rem;"></i>
+                <span class="metric-card-label">Catalog Items</span>
+                <i class="fa-solid fa-boxes-stacked" style="color: var(--primary-accent); font-size: 1.2rem;"></i>
             </div>
-            <div style="font-size: 1.8rem; font-weight: 800; color: #f8fafc;">{{ total_products }}</div>
-            <span style="font-size: 0.75rem; color: #94a3b8;">Total active catalog items</span>
+            <div class="metric-card-value">{{ total_products }}</div>
+            <span class="metric-card-sub">Total active catalog items</span>
         </div>
 
         <!-- In Stock Card -->
-        <div class="metric-card" style="background: var(--card-bg, rgba(30, 41, 59, 0.5)); border: 1px solid var(--border-color, rgba(255,255,255,0.08)); border-radius: 10px; padding: 1.25rem;">
+        <div class="metric-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Healthy Stock</span>
-                <i class="fa-solid fa-circle-check" style="color: #34d399; font-size: 1.2rem;"></i>
+                <span class="metric-card-label">Healthy Stock</span>
+                <i class="fa-solid fa-circle-check" style="color: var(--color-safe); font-size: 1.2rem;"></i>
             </div>
-            <div style="font-size: 1.8rem; font-weight: 800; color: #34d399;">{{ in_stock_count }}</div>
-            <span style="font-size: 0.75rem; color: #94a3b8;">Sufficient inventory levels</span>
+            <div class="metric-card-value text-safe">{{ in_stock_count }}</div>
+            <span class="metric-card-sub">Sufficient inventory levels</span>
         </div>
 
         <!-- Low Stock Card -->
-        <div class="metric-card" style="background: var(--card-bg, rgba(30, 41, 59, 0.5)); border: 1px solid var(--border-color, rgba(255,255,255,0.08)); border-radius: 10px; padding: 1.25rem;">
+        <div class="metric-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Low Stock Warning</span>
-                <i class="fa-solid fa-triangle-exclamation" style="color: #fbbf24; font-size: 1.2rem;"></i>
+                <span class="metric-card-label">Low Stock Warning</span>
+                <i class="fa-solid fa-triangle-exclamation" style="color: var(--color-warning); font-size: 1.2rem;"></i>
             </div>
-            <div style="font-size: 1.8rem; font-weight: 800; color: #fbbf24;">{{ low_stock_count }}</div>
-            <span style="font-size: 0.75rem; color: #94a3b8;">Below safety threshold</span>
+            <div class="metric-card-value text-warning">{{ low_stock_count }}</div>
+            <span class="metric-card-sub">Below safety threshold</span>
         </div>
 
         <!-- Out of Stock Card -->
-        <div class="metric-card" style="background: var(--card-bg, rgba(30, 41, 59, 0.5)); border: 1px solid var(--border-color, rgba(255,255,255,0.08)); border-radius: 10px; padding: 1.25rem;">
+        <div class="metric-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Out of Stock</span>
-                <i class="fa-solid fa-circle-xmark" style="color: #f87171; font-size: 1.2rem;"></i>
+                <span class="metric-card-label">Out of Stock</span>
+                <i class="fa-solid fa-circle-xmark" style="color: var(--color-critical); font-size: 1.2rem;"></i>
             </div>
-            <div style="font-size: 1.8rem; font-weight: 800; color: #f87171;">{{ out_of_stock_count }}</div>
-            <span style="font-size: 0.75rem; color: #94a3b8;">Requires inventory replenishment</span>
+            <div class="metric-card-value text-critical">{{ out_of_stock_count }}</div>
+            <span class="metric-card-sub">Requires inventory replenishment</span>
         </div>
 
     </div>
