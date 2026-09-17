@@ -1,3 +1,4 @@
+from typing import Any, Dict, List, Optional
 import logging
 from pymongo import ASCENDING
 from pymongo.errors import PyMongoError
@@ -81,7 +82,7 @@ class InventoryRepository:
             logger.error(f"Error querying MongoDB all products: {err}")
             return []
 
-    def get_by_id(self, product_id: str) -> dict:
+    def get_by_id(self, product_id: str) -> dict | None:
         """Finds inventory item by _id or sku."""
         coll = self._get_collection()
         if coll is None:
@@ -114,16 +115,16 @@ class InventoryRepository:
             logger.error(f"Error upserting product '{product_data.get('sku')}': {err}")
             return False
 
-    def update_stock_telemetry(self, product_id: str, current_stock: int, today_movement: int, daily_usage_history: list = None, last_updated: str = None) -> bool:
+    def update_stock_telemetry(self, product_id: str, current_stock: int, today_movement: int, daily_usage_history: list | None = None, last_updated: str | None = None) -> bool:
         """Updates real-time telemetry, stock levels, and consumption history in MongoDB."""
         coll = self._get_collection()
         if coll is None:
             return False
 
         try:
-            update_fields = {
-                "current_stock": int(current_stock),
-                "today_movement": int(today_movement)
+            update_fields: dict[str, Any] = {
+                "current_stock": current_stock,
+                "today_movement": today_movement
             }
             if daily_usage_history is not None:
                 update_fields["daily_usage_history"] = daily_usage_history

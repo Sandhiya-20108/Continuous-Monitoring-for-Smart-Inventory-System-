@@ -1,0 +1,10 @@
+[tool.pyrefly]
+python-interpreter-path = "c:/Users/Student/Desktop/Continuous-Monitoring-for-Smart-Inventory-System--main/.venv/Scripts/python.exe"
+search-path = [
+  "c:/Users/Student/Desktop/Continuous-Monitoring-for-Smart-Inventory-System--main",
+  "c:/Users/Student/Desktop/Continuous-Monitoring-for-Smart-Inventory-System--main/backend"
+]
+site-package-path = [
+  "c:/Users/Student/Desktop/Continuous-Monitoring-for-Smart-Inventory-System--main/.venv/Lib/site-packages",
+  "C:/Users/Student/AppData/Local/Programs/Python/Python314/Lib/site-packages"
+]

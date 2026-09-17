@@ -1,3 +1,5 @@
+"""User repository module managing user authentication, persistence, and RBAC operations."""
+from typing import Optional, Dict, Any, List
 import logging
 from datetime import datetime, timezone
 from pymongo import ASCENDING
@@ -9,7 +11,7 @@ from backend.models.user_model import UserModel
 
 logger = logging.getLogger("user_repository")
 
-DEFAULT_SEED_USERS = [
+DEFAULT_SEED_USERS: List[Dict[str, Any]] = [
     {
         "_id": "user-admin-001",
         "email": "admin@inventory.com",
@@ -60,7 +62,8 @@ class UserRepository:
 
     def _init_memory_store(self):
         for user_dict in DEFAULT_SEED_USERS:
-            self._in_memory_users[user_dict["email"].lower()] = dict(user_dict)
+            email_val = str(user_dict.get("email", "")).lower()
+            self._in_memory_users[email_val] = dict(user_dict)
 
     def create_indexes(self) -> bool:
         coll = self._get_collection()
@@ -93,7 +96,7 @@ class UserRepository:
             logger.error(f"Error seeding default users: {err}")
             return 0
 
-    def find_by_email_or_username(self, identifier: str) -> dict:
+    def find_by_email_or_username(self, identifier: str) -> dict | None:
         identifier_clean = identifier.strip().lower()
         coll = self._get_collection()
         if coll is not None:
@@ -114,11 +117,13 @@ class UserRepository:
 
         # Fallback to in-memory store
         for u in self._in_memory_users.values():
-            if u["email"].lower() == identifier_clean or u["username"].lower() == identifier_clean:
+            u_email = str(u.get("email", "")).lower()
+            u_uname = str(u.get("username", "")).lower()
+            if u_email == identifier_clean or u_uname == identifier_clean:
                 return dict(u)
         return None
 
-    def find_by_id(self, user_id: str) -> dict:
+    def find_by_id(self, user_id: str) -> dict | None:
         coll = self._get_collection()
         if coll is not None:
             try:
