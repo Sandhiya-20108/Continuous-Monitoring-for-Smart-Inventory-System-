@@ -4,6 +4,7 @@ import random
 import logging
 from datetime import datetime, timezone
 from backend.models.inventory_model import InventoryItemModel
+from backend.services.alert_service import AlertService
 from backend.utils import risk_engine
 from backend.utils import view_helpers
 from backend.database import MongoDBConnection
@@ -776,84 +777,23 @@ class InventoryService:
         return alert
 
     def get_alerts(self, severity_filter=None) -> list:
-        """Returns structured alert feed for the Alert Center."""
+        """Returns structured alert feed for the Alert Center using AlertService."""
         products = self.get_all_products()
-        alerts = []
-
-        for p in products:
-            if p["current_stock"] <= 0:
-                alerts.append({
-                    "id": f"alert-out-{p['_id']}",
-                    "product_id": p["_id"],
-                    "product_name": p["name"],
-                    "category": p["category"],
-                    "severity": "Critical",
-                    "type": "Out of Stock",
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                    "message": f"CRITICAL: {p['name']} is completely OUT OF STOCK (0 units)."
-                })
-            elif p["current_stock"] < p["min_stock"]:
-                alerts.append({
-                    "id": f"alert-low-{p['_id']}",
-                    "product_id": p["_id"],
-                    "product_name": p["name"],
-                    "category": p["category"],
-                    "severity": "High Risk" if p["days_to_stockout"] <= 3 else "Warning",
-                    "type": "Low Stock",
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                    "message": f"Stock level for {p['name']} ({p['current_stock']} {p['unit']}) has dropped below min safety threshold ({p['min_stock']})."
-                })
-
-            if p["expiry_info"]["is_expiring_soon"]:
-                alerts.append({
-                    "id": f"alert-exp-{p['_id']}",
-                    "product_id": p["_id"],
-                    "product_name": p["name"],
-                    "category": p["category"],
-                    "severity": "Critical" if p["expiry_info"]["days_remaining"] <= 3 else "Warning",
-                    "type": "Expiry Approaching",
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                    "message": f"EXPIRY ALERT: {p['name']} ({p['current_stock']} units) expires in {p['expiry_info']['days_remaining']} days."
-                })
-
-            if p["anomaly_info"]["has_anomaly"]:
-                alerts.append({
-                    "id": f"alert-anom-{p['_id']}",
-                    "product_id": p["_id"],
-                    "product_name": p["name"],
-                    "category": p["category"],
-                    "severity": "Warning",
-                    "type": "Unusual Movement",
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                    "message": p["anomaly_info"]["description"]
-                })
-
-            if p["demand_trend"] == "Increasing":
-                alerts.append({
-                    "id": f"alert-trend-{p['_id']}",
-                    "product_id": p["_id"],
-                    "product_name": p["name"],
-                    "category": p["category"],
-                    "severity": "Safe",
-                    "type": "Demand Trend",
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                    "message": f"DEMAND SURGE: {p['name']} daily consumption trend is increasing over the last 7 days."
-                })
-
-        if severity_filter and severity_filter.lower() != "all":
-            alerts = [a for a in alerts if a["severity"].lower() == severity_filter.lower()]
-
-        for a in alerts:
-            st_info = self.get_alert_status(a["id"])
-            a["status"] = st_info.get("status", "New")
-            a["updated_by"] = st_info.get("updated_by", "")
-            a["updated_at"] = st_info.get("updated_at", "")
-            self.classify_alert(a)
-            view_helpers.present_alert(a)
-
-        severity_order = {"Critical": 0, "High Risk": 1, "Warning": 2, "Safe": 3}
-        alerts.sort(key=lambda x: severity_order.get(x["severity"], 4))
+        alerts, _ = AlertService.process_smart_alerts(
+            products=products,
+            severity_filter=severity_filter or "all",
+            status_provider=self.get_alert_status
+        )
         return alerts
+
+    def get_smart_alerts_summary(self, severity_filter="all") -> tuple:
+        """Returns (alerts, summary_dict) tuple using Python AlertService."""
+        products = self.get_all_products()
+        return AlertService.process_smart_alerts(
+            products=products,
+            severity_filter=severity_filter or "all",
+            status_provider=self.get_alert_status
+        )
 
     def simulate_continuous_tick(self) -> dict:
         """

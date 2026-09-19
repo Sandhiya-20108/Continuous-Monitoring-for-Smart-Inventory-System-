@@ -26,9 +26,9 @@
                 <i class="fa-solid fa-chart-pie"></i>
                 <span class="nav-text">Analytics</span>
             </a>
-            <a href="{{ url_for('web.alerts') }}" class="nav-item {% if current_view == 'alerts' %}active{% endif %}" data-tooltip="Alerts">
+            <a href="{{ url_for('web.alerts') }}" class="nav-item {% if current_view == 'alerts' %}active{% endif %}" data-tooltip="Smart Alerts">
                 <i class="fa-solid fa-bell"></i>
-                <span class="nav-text">Alerts</span>
+                <span class="nav-text">Smart Alerts</span>
             </a>
             <a href="{{ url_for('web.inventory', history_id='all') }}" class="nav-item {% if request.args.get('history_id') == 'all' %}active{% endif %}" data-tooltip="Transactions">
                 <i class="fa-solid fa-receipt"></i>

@@ -650,14 +650,15 @@ def risk_monitor():
 @login_required
 def alerts():
     severity = request.args.get("severity", "all")
-    alerts_list = inventory_service.get_alerts(severity_filter=severity)
+    alerts_list, summary = inventory_service.get_smart_alerts_summary(severity_filter=severity)
 
     return render_template(
         "alerts.html",
         current_view="alerts",
-        page_title="Central Risk Alert Feed",
+        page_title="Smart Alert Center",
         page_breadcrumb="Alerts Center",
         alerts=alerts_list,
+        summary=summary,
         selected_severity=severity
     )
 
