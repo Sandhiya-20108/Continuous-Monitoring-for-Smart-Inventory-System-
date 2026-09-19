@@ -13,13 +13,15 @@ env/
 venv/
 .venv/
 backend/venv/
+*.log
 
-# IDE & OS
+# IDE & OS & Test Caches
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
 .pytest_cache/
+.mypy_cache/
 
 # Scratch directory
 scratch/
