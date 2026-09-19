@@ -260,12 +260,12 @@
         </div>
     </div>
 
-    <!-- Inventory List Section -->
+    <!-- Inventory List Section (Enhanced with Smart Stock Forecast) -->
     <div class="dribbble-card inventory-list-card">
         <div class="card-header-flex">
             <div>
-                <h3 class="card-title-heading">Inventory list</h3>
-                <p class="card-sub-heading">Live stock status across warehouse zones</p>
+                <h3 class="card-title-heading">Inventory list & Smart Forecast</h3>
+                <p class="card-sub-heading">Live stock status, telemetry depletion forecast & warehouse zones</p>
             </div>
             <div class="header-action-group">
                 <a href="{{ url_for('web.inventory') }}" class="btn-dribbble-outline">
@@ -286,7 +286,8 @@
                         <th>PRODUCT</th>
                         <th>CATEGORY</th>
                         <th>STOCK</th>
-                        <th>STATUS</th>
+                        <th>EST. DAYS TO MIN</th>
+                        <th>SMART FORECAST</th>
                         <th>LOCATION / RISK</th>
                         <th>ACTIONS</th>
                     </tr>
@@ -310,12 +311,21 @@
                             </td>
                             <td>
                                 <strong class="stock-qty">{{ p.current_stock }}</strong>
+                                <span style="font-size: 0.72rem; color: var(--text-muted); display: block;">Min: {{ p.forecast.min_stock if p.forecast else (p.min_stock or 10) }}</span>
                             </td>
                             <td>
-                                {% if p.current_stock <= (p.critical_stock or 5) %}
-                                    <span class="pill-badge pill-critical">Critical</span>
-                                {% elif p.current_stock <= (p.min_stock or 10) %}
-                                    <span class="pill-badge pill-low">Low Stock</span>
+                                <span style="font-weight: 700; font-size: 0.85rem; color: var(--text-main);">
+                                    {{ p.forecast.estimated_days_display if p.forecast else 'N/A' }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if p.forecast %}
+                                    <span class="pill-badge {{ p.forecast.badge_class }}" title="{{ p.forecast.forecast_message }}">
+                                        {{ p.forecast.forecast_status_label }}
+                                    </span>
+                                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">
+                                        +7d: <strong>{{ p.forecast.future_stock.day_7 }}</strong> | +14d: <strong>{{ p.forecast.future_stock.day_14 }}</strong> | +30d: <strong>{{ p.forecast.future_stock.day_30 }}</strong>
+                                    </div>
                                 {% else %}
                                     <span class="pill-badge pill-healthy">Healthy</span>
                                 {% endif %}
@@ -334,7 +344,7 @@
                         {% endfor %}
                     {% else %}
                         <tr>
-                            <td colspan="7" class="text-center text-muted" style="padding: 2rem;">
+                            <td colspan="8" class="text-center text-muted" style="padding: 2rem;">
                                 No inventory items found in database.
                             </td>
                         </tr>

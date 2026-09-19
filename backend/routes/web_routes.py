@@ -5,6 +5,7 @@ from functools import wraps
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, Response
 from backend.services.inventory_service import InventoryService
 from backend.services.auth_service import AuthService
+from backend.services.stock_forecast_service import StockForecastService
 from backend.utils import risk_engine
 from backend.utils.date_formatter import format_date_filter, SUPPORTED_DATE_FORMATS, DEFAULT_DATE_FORMAT
 
@@ -192,7 +193,8 @@ def dashboard():
 
     selected_month = request.args.get("month")
 
-    products = inventory_service.get_all_products()
+    raw_products = inventory_service.get_all_products()
+    products = StockForecastService.enrich_products_with_forecast(raw_products)
     metrics = inventory_service.get_dashboard_metrics()
     alerts = inventory_service.get_alerts()
     recent_transactions = inventory_service.get_recent_transactions(limit=6)
