@@ -1,16 +1,30 @@
 import os
 import sys
 
-# Ensure root workspace directory is in sys.path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Ensure root workspace directory and backend directory are in sys.path
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+backend_dir = os.path.dirname(os.path.abspath(__file__))
+
+if base_dir not in sys.path:
+    sys.path.insert(0, base_dir)
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
 
 from flask import Flask
 from flask_cors import CORS
-from backend.config import Config
-from backend.routes.inventory import inventory_bp
-from backend.routes.auth import auth_bp
-from backend.routes.web_routes import web_bp
-from backend.utils.theme_helpers import get_current_theme, get_theme_styles, get_theme_class
+
+try:
+    from backend.config import Config
+    from backend.routes.inventory import inventory_bp
+    from backend.routes.auth import auth_bp
+    from backend.routes.web_routes import web_bp
+    from backend.utils.theme_helpers import get_current_theme, get_theme_styles, get_theme_class
+except ImportError:
+    from config import Config
+    from routes.inventory import inventory_bp
+    from routes.auth import auth_bp
+    from routes.web_routes import web_bp
+    from utils.theme_helpers import get_current_theme, get_theme_styles, get_theme_class
 
 def create_app():
     backend_dir = os.path.dirname(os.path.abspath(__file__))
