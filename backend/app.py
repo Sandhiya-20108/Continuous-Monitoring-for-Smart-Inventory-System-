@@ -12,19 +12,11 @@ if backend_dir not in sys.path:
 
 from flask import Flask
 from flask_cors import CORS
-
-try:
-    from backend.config import Config
-    from backend.routes.inventory import inventory_bp
-    from backend.routes.auth import auth_bp
-    from backend.routes.web_routes import web_bp
-    from backend.utils.theme_helpers import get_current_theme, get_theme_styles, get_theme_class
-except ImportError:
-    from config import Config
-    from routes.inventory import inventory_bp
-    from routes.auth import auth_bp
-    from routes.web_routes import web_bp
-    from utils.theme_helpers import get_current_theme, get_theme_styles, get_theme_class
+from config import Config
+from backend.routes.inventory import inventory_bp
+from backend.routes.auth import auth_bp
+from backend.routes.web_routes import web_bp
+from backend.utils.theme_helpers import get_current_theme, get_theme_styles, get_theme_class
 
 def create_app():
     backend_dir = os.path.dirname(os.path.abspath(__file__))
