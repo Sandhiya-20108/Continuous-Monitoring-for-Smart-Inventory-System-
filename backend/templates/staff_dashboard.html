@@ -125,6 +125,46 @@
         </div>
     </div>
 
+    <!-- Staff Stock Attention Overview Area -->
+    <div class="panel" style="padding: 1.25rem; margin-bottom: 1.5rem;" id="stock-attention-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div>
+                <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fa-solid fa-clipboard-check" style="color: var(--primary-accent, #10b981);"></i> Stock Attention
+                </h3>
+                <span style="font-size: 0.78rem; color: var(--text-muted);">Daily inventory action status & replenishment priority</span>
+            </div>
+            <a href="{{ url_for('web.staff_products') }}" style="font-size: 0.8rem; color: var(--primary-cyan, #10b981); text-decoration: none; font-weight: 600;">
+                View All Products <i class="fa-solid fa-arrow-right"></i>
+            </a>
+        </div>
+
+        {% if stock_attention_items %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
+            {% for item in stock_attention_items[:12] %}
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color, rgba(255,255,255,0.08)); border-radius: 8px; padding: 1rem; display: flex; flex-direction: column; justify-content: space-between; gap: 0.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <strong style="font-size: 0.92rem; color: var(--text-main); display: block; margin-bottom: 0.2rem;">{{ item.name }}</strong>
+                        <span style="font-size: 0.76rem; color: var(--text-muted);">Current: <strong>{{ item.current_stock }}</strong> | Minimum: <strong>{{ item.min_stock }}</strong></span>
+                    </div>
+                    <span class="pill-badge {{ item.badge_class }}" style="font-size: 0.72rem; padding: 0.25rem 0.65rem;">
+                        <i class="fa-solid {{ item.status_icon }}"></i> {{ item.status }}
+                    </span>
+                </div>
+                <div style="font-size: 0.78rem; color: var(--text-muted); border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.4rem; display: flex; align-items: center; gap: 0.35rem;">
+                    <i class="fa-solid fa-circle-info" style="font-size: 0.75rem;"></i> Action: <strong>{{ item.action_message }}</strong>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 1.5rem; color: var(--text-muted);">
+            <p style="font-size: 0.88rem; margin: 0;">No stock attention records available.</p>
+        </div>
+        {% endif %}
+    </div>
+
     <!-- Main 2-Column Section: Recent Activity & Permitted Alerts -->
     <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
         

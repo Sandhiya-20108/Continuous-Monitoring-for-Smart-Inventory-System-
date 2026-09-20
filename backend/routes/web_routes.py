@@ -246,11 +246,78 @@ def staff_dashboard():
     if session.get("user", {}).get("role") == "admin":
         return redirect(url_for("web.dashboard"))
     
-    products = inventory_service.get_all_products()
+    raw_products = inventory_service.get_all_products()
+    products = StockForecastService.enrich_products_with_forecast(raw_products)
     total_products = len(products)
     out_of_stock_count = sum(1 for p in products if p.get("current_stock", 0) <= 0)
     low_stock_count = sum(1 for p in products if 0 < p.get("current_stock", 0) <= p.get("min_stock", 10))
     in_stock_count = max(0, total_products - out_of_stock_count - low_stock_count)
+
+    stock_attention_items = []
+    priority_map = {"CRITICAL": 1, "LOW": 2, "EXPIRY ATTENTION": 3, "WATCH": 4, "UNAVAILABLE": 5, "SAFE": 6}
+
+    for p in products:
+        forecast = p.get("forecast", {})
+        fc_status = forecast.get("forecast_status", "UNAVAILABLE")
+        expiry_info = p.get("expiry_info", {})
+        
+        is_expiring = False
+        if isinstance(expiry_info, dict):
+            exp_status = expiry_info.get("status")
+            days_rem = expiry_info.get("days_remaining")
+            if exp_status in ["Critical", "Warning", "Expiring Soon"] or (days_rem is not None and days_rem <= 30):
+                is_expiring = True
+
+        if is_expiring and fc_status not in ["CRITICAL", "LOW"]:
+            attn_status = "EXPIRY ATTENTION"
+            badge_class = "pill-warning"
+            status_icon = "fa-calendar-xmark"
+            action_msg = "Approaching expiry date."
+            prio = 3
+        elif fc_status == "CRITICAL":
+            attn_status = "CRITICAL"
+            badge_class = forecast.get("badge_class", "pill-critical")
+            status_icon = forecast.get("status_icon", "fa-circle-xmark")
+            action_msg = "Immediate attention required."
+            prio = 1
+        elif fc_status == "LOW":
+            attn_status = "LOW"
+            badge_class = forecast.get("badge_class", "pill-low")
+            status_icon = forecast.get("status_icon", "fa-triangle-exclamation")
+            action_msg = "Stock needs attention."
+            prio = 2
+        elif fc_status == "WATCH":
+            attn_status = "WATCH"
+            badge_class = forecast.get("badge_class", "pill-warning")
+            status_icon = forecast.get("status_icon", "fa-eye")
+            action_msg = "Monitor stock level."
+            prio = 4
+        elif fc_status == "SAFE":
+            attn_status = "SAFE"
+            badge_class = forecast.get("badge_class", "pill-healthy")
+            status_icon = forecast.get("status_icon", "fa-circle-check")
+            action_msg = "No immediate action required."
+            prio = 6
+        else:
+            attn_status = "FORECAST UNAVAILABLE"
+            badge_class = "pill-neutral"
+            status_icon = "fa-circle-question"
+            action_msg = "Average daily usage is unavailable."
+            prio = 5
+
+        stock_attention_items.append({
+            "_id": str(p.get("_id", "")),
+            "name": p.get("name", "Unknown Product"),
+            "current_stock": forecast.get("current_stock", p.get("current_stock", 0)),
+            "min_stock": forecast.get("min_stock", p.get("min_stock", 0)),
+            "status": attn_status,
+            "badge_class": badge_class,
+            "status_icon": status_icon,
+            "action_message": action_msg,
+            "priority": prio
+        })
+
+    stock_attention_items.sort(key=lambda x: (x["priority"], x["name"]))
 
     recent_transactions = inventory_service.get_recent_transactions(limit=6)
     alerts = inventory_service.get_alerts()
@@ -265,6 +332,7 @@ def staff_dashboard():
         in_stock_count=in_stock_count,
         low_stock_count=low_stock_count,
         out_of_stock_count=out_of_stock_count,
+        stock_attention_items=stock_attention_items,
         recent_transactions=recent_transactions,
         alerts=alerts[:5],
         greeting=greeting
