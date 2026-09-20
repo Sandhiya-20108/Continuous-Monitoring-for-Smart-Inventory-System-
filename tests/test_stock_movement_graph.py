@@ -209,23 +209,30 @@ class TestStockMovementGraph(unittest.TestCase):
         """Verify that when monthly transaction values change, the SVG path A != path B and area A != area B."""
         analytics_orig = self.service.get_stock_movement_analytics(months=6)
 
-        # Create custom transaction dataset B
-        tx_b1 = {"timestamp": "2026-04-15", "type": "IN", "quantity_changed": 9999}
-        tx_b2 = {"timestamp": "2026-05-15", "type": "OUT", "quantity_changed": 8888}
-        self.service._transactions.append(tx_b1)
-        self.service._transactions.append(tx_b2)
+        tx1 = self.service.record_transaction("prod-test", "Test Item", "STOCK_IN", 9999, 10, 10009, "Tester", "Admin", "Test entry 1")
+        tx2 = self.service.record_transaction("prod-test", "Test Item", "STOCK_OUT", 8888, 10009, 1121, "Tester", "Admin", "Test entry 2")
 
-        analytics_mod = self.service.get_stock_movement_analytics(months=6)
+        try:
+            analytics_mod = self.service.get_stock_movement_analytics(months=6)
 
-        # Assert SVG curves and areas dynamically change when transaction data changes
-        self.assertNotEqual(analytics_orig["inbound_curve"], analytics_mod["inbound_curve"])
-        self.assertNotEqual(analytics_orig["inbound_area"], analytics_mod["inbound_area"])
-        self.assertNotEqual(analytics_orig["outbound_curve"], analytics_mod["outbound_curve"])
-        self.assertNotEqual(analytics_orig["outbound_area"], analytics_mod["outbound_area"])
-
-        # Clean up
-        self.service._transactions.remove(tx_b1)
-        self.service._transactions.remove(tx_b2)
+            # Assert SVG curves and areas dynamically change when transaction data changes
+            self.assertNotEqual(analytics_orig["inbound_curve"], analytics_mod["inbound_curve"])
+            self.assertNotEqual(analytics_orig["inbound_area"], analytics_mod["inbound_area"])
+            self.assertNotEqual(analytics_orig["outbound_curve"], analytics_mod["outbound_curve"])
+            self.assertNotEqual(analytics_orig["outbound_area"], analytics_mod["outbound_area"])
+        finally:
+            if self.service.use_mongodb and self.service.db_conn and self.service.db_conn.is_connected():
+                try:
+                    coll = self.service.db_conn.get_collection("inventory_transactions")
+                    if coll is not None:
+                        coll.delete_one({"id": tx1.get("id")})
+                        coll.delete_one({"id": tx2.get("id")})
+                except Exception:
+                    pass
+            if tx1 in self.service._transactions:
+                self.service._transactions.remove(tx1)
+            if tx2 in self.service._transactions:
+                self.service._transactions.remove(tx2)
 
 
 if __name__ == "__main__":
