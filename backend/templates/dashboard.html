@@ -312,6 +312,7 @@
                             <td>
                                 <strong class="stock-qty">{{ p.current_stock }}</strong>
                                 <span style="font-size: 0.72rem; color: var(--text-muted); display: block;">Min: {{ p.forecast.min_stock if p.forecast else (p.min_stock or 10) }}</span>
+                                <span style="font-size: 0.70rem; color: var(--text-dim); display: block;">Usage: {{ p.forecast.daily_usage if (p.forecast and p.forecast.daily_usage > 0) else '0' }}/day</span>
                             </td>
                             <td>
                                 <span style="font-weight: 700; font-size: 0.85rem; color: var(--text-main);">
@@ -321,13 +322,22 @@
                             <td>
                                 {% if p.forecast %}
                                     <span class="pill-badge {{ p.forecast.badge_class }}" title="{{ p.forecast.forecast_message }}">
-                                        {{ p.forecast.forecast_status_label }}
+                                        <i class="fa-solid {{ p.forecast.status_icon }}"></i> {{ p.forecast.forecast_status_label }}
                                     </span>
-                                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">
-                                        +7d: <strong>{{ p.forecast.future_stock.day_7 }}</strong> | +14d: <strong>{{ p.forecast.future_stock.day_14 }}</strong> | +30d: <strong>{{ p.forecast.future_stock.day_30 }}</strong>
-                                    </div>
+                                    {% if p.forecast.forecast_status == 'UNAVAILABLE' %}
+                                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">
+                                            Average daily usage is unavailable.
+                                        </div>
+                                    {% else %}
+                                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">
+                                            +7d: <strong>{{ p.forecast.future_stock.day_7 }}</strong> | +14d: <strong>{{ p.forecast.future_stock.day_14 }}</strong> | +30d: <strong>{{ p.forecast.future_stock.day_30 }}</strong>
+                                        </div>
+                                    {% endif %}
                                 {% else %}
-                                    <span class="pill-badge pill-healthy">Healthy</span>
+                                    <span class="pill-badge pill-neutral"><i class="fa-solid fa-circle-question"></i> FORECAST UNAVAILABLE</span>
+                                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">
+                                        Average daily usage is unavailable.
+                                    </div>
                                 {% endif %}
                             </td>
                             <td>

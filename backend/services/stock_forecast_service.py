@@ -61,29 +61,36 @@ class StockForecastService:
         stock_30d = max(0.0, round(current_stock - (daily_usage * 30.0), 1))
 
         # 4. Forecast Status Classification
-        if current_stock <= min_stock:
+        if current_stock <= 0:
             status = "CRITICAL"
-            status_label = "Critical Deficit"
+            status_label = "CRITICAL"
             badge_class = "pill-critical"
-            msg = "Stock is currently at or below minimum safety level."
-        elif estimated_days_to_minimum is not None and estimated_days_to_minimum <= 7.0:
+            status_icon = "fa-circle-xmark"
+            msg = "Stock is completely depleted (0 available)."
+        elif current_stock <= min_stock:
             status = "LOW"
-            status_label = "Min Stock Imminent"
+            status_label = "LOW"
             badge_class = "pill-low"
-            msg = f"Stock is expected to reach minimum level in {estimated_days_to_minimum} days."
-        elif estimated_days_to_minimum is not None and estimated_days_to_minimum <= 30.0:
+            status_icon = "fa-triangle-exclamation"
+            msg = f"Current stock ({current_stock}) is at or below minimum safety level ({min_stock})."
+        elif daily_usage <= 0 or estimated_days_to_minimum is None:
+            status = "UNAVAILABLE"
+            status_label = "FORECAST UNAVAILABLE"
+            badge_class = "pill-neutral"
+            status_icon = "fa-circle-question"
+            msg = "Average daily usage is unavailable."
+        elif estimated_days_to_minimum <= 14.0:
             status = "WATCH"
-            status_label = "Monitor Depletion"
+            status_label = "WATCH"
             badge_class = "pill-warning"
-            msg = f"Stock is expected to reach minimum level in {estimated_days_to_minimum} days."
+            status_icon = "fa-eye"
+            msg = f"Stock is expected to reach minimum safety level in {estimated_days_to_minimum} days."
         else:
-            status = "HEALTHY"
-            status_label = "Healthy Forecast"
+            status = "SAFE"
+            status_label = "SAFE"
             badge_class = "pill-healthy"
-            if daily_usage > 0:
-                msg = "Stock is expected to remain above minimum level for the forecast period."
-            else:
-                msg = "Stock levels stable; usage telemetry indicates no depletion risk."
+            status_icon = "fa-circle-check"
+            msg = f"Stock is healthy and expected to remain above minimum level for {estimated_days_to_minimum} days."
 
         return {
             "current_stock": int(current_stock) if current_stock.is_integer() else current_stock,
@@ -99,6 +106,7 @@ class StockForecastService:
             "forecast_status": status,
             "forecast_status_label": status_label,
             "badge_class": badge_class,
+            "status_icon": status_icon,
             "forecast_message": msg
         }
 

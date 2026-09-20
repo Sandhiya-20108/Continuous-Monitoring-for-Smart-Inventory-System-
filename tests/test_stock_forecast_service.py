@@ -21,7 +21,7 @@ class TestStockForecastService(unittest.TestCase):
         self.assertEqual(forecast["min_stock"], 10)
         self.assertEqual(forecast["daily_usage"], 2.0)
         self.assertEqual(forecast["estimated_days_to_minimum"], 20.0) # (50-10)/2 = 20
-        self.assertEqual(forecast["forecast_status"], "WATCH")
+        self.assertEqual(forecast["forecast_status"], "SAFE")
 
     def test_2_current_stock_above_minimum(self):
         product = {
@@ -32,7 +32,7 @@ class TestStockForecastService(unittest.TestCase):
         }
         forecast = StockForecastService.calculate_product_forecast(product)
         self.assertEqual(forecast["estimated_days_to_minimum"], 90.0)
-        self.assertEqual(forecast["forecast_status"], "HEALTHY")
+        self.assertEqual(forecast["forecast_status"], "SAFE")
 
     def test_3_current_stock_equal_to_minimum(self):
         product = {
@@ -43,7 +43,7 @@ class TestStockForecastService(unittest.TestCase):
         }
         forecast = StockForecastService.calculate_product_forecast(product)
         self.assertEqual(forecast["estimated_days_to_minimum"], 0.0)
-        self.assertEqual(forecast["forecast_status"], "CRITICAL")
+        self.assertEqual(forecast["forecast_status"], "LOW")
 
     def test_4_current_stock_below_minimum(self):
         product = {
@@ -54,7 +54,7 @@ class TestStockForecastService(unittest.TestCase):
         }
         forecast = StockForecastService.calculate_product_forecast(product)
         self.assertEqual(forecast["estimated_days_to_minimum"], 0.0)
-        self.assertEqual(forecast["forecast_status"], "CRITICAL")
+        self.assertEqual(forecast["forecast_status"], "LOW")
 
     def test_5_average_daily_usage_greater_than_zero(self):
         product = {
@@ -65,7 +65,7 @@ class TestStockForecastService(unittest.TestCase):
         }
         forecast = StockForecastService.calculate_product_forecast(product)
         self.assertEqual(forecast["estimated_days_to_minimum"], 4.0) # (30-10)/5 = 4
-        self.assertEqual(forecast["forecast_status"], "LOW") # <= 7 days
+        self.assertEqual(forecast["forecast_status"], "WATCH") # <= 14 days
 
     def test_6_average_daily_usage_zero(self):
         product = {
@@ -77,7 +77,8 @@ class TestStockForecastService(unittest.TestCase):
         forecast = StockForecastService.calculate_product_forecast(product)
         self.assertIsNone(forecast["estimated_days_to_minimum"])
         self.assertEqual(forecast["estimated_days_display"], "N/A")
-        self.assertEqual(forecast["forecast_status"], "HEALTHY")
+        self.assertEqual(forecast["forecast_status"], "UNAVAILABLE")
+        self.assertEqual(forecast["forecast_status_label"], "FORECAST UNAVAILABLE")
 
     def test_7_missing_average_daily_usage(self):
         product = {
@@ -88,6 +89,7 @@ class TestStockForecastService(unittest.TestCase):
         forecast = StockForecastService.calculate_product_forecast(product)
         self.assertIsNone(forecast["estimated_days_to_minimum"])
         self.assertEqual(forecast["daily_usage"], 0.0)
+        self.assertEqual(forecast["forecast_status"], "UNAVAILABLE")
 
     def test_8_missing_minimum_stock(self):
         product = {
@@ -98,6 +100,7 @@ class TestStockForecastService(unittest.TestCase):
         forecast = StockForecastService.calculate_product_forecast(product)
         self.assertEqual(forecast["min_stock"], 0)
         self.assertEqual(forecast["estimated_days_to_minimum"], 15.0)
+        self.assertEqual(forecast["forecast_status"], "SAFE")
 
     def test_9_missing_quantity(self):
         product = {
@@ -120,6 +123,7 @@ class TestStockForecastService(unittest.TestCase):
         self.assertEqual(forecast["current_stock"], 0)
         self.assertEqual(forecast["min_stock"], 0)
         self.assertEqual(forecast["daily_usage"], 0.0)
+        self.assertEqual(forecast["forecast_status"], "CRITICAL")
 
     def test_11_future_stock_never_becomes_negative(self):
         product = {
@@ -144,15 +148,17 @@ class TestStockForecastService(unittest.TestCase):
         self.assertEqual(forecast["estimated_days_to_minimum"], 5.0)
 
     def test_13_forecast_status_calculation_tiers(self):
-        crit = StockForecastService.calculate_product_forecast({"current_stock": 5, "min_stock": 10, "average_daily_usage": 1})
-        low = StockForecastService.calculate_product_forecast({"current_stock": 15, "min_stock": 10, "average_daily_usage": 1}) # 5 days
-        watch = StockForecastService.calculate_product_forecast({"current_stock": 30, "min_stock": 10, "average_daily_usage": 1}) # 20 days
-        healthy = StockForecastService.calculate_product_forecast({"current_stock": 100, "min_stock": 10, "average_daily_usage": 1}) # 90 days
+        crit = StockForecastService.calculate_product_forecast({"current_stock": 0, "min_stock": 10, "average_daily_usage": 1})
+        low = StockForecastService.calculate_product_forecast({"current_stock": 5, "min_stock": 10, "average_daily_usage": 1})
+        watch = StockForecastService.calculate_product_forecast({"current_stock": 15, "min_stock": 10, "average_daily_usage": 1}) # 5 days
+        safe = StockForecastService.calculate_product_forecast({"current_stock": 100, "min_stock": 10, "average_daily_usage": 1}) # 90 days
+        unavail = StockForecastService.calculate_product_forecast({"current_stock": 100, "min_stock": 10, "average_daily_usage": 0})
 
         self.assertEqual(crit["forecast_status"], "CRITICAL")
         self.assertEqual(low["forecast_status"], "LOW")
         self.assertEqual(watch["forecast_status"], "WATCH")
-        self.assertEqual(healthy["forecast_status"], "HEALTHY")
+        self.assertEqual(safe["forecast_status"], "SAFE")
+        self.assertEqual(unavail["forecast_status"], "UNAVAILABLE")
 
     def test_14_dashboard_route_passes_forecast_data(self):
         self.app.post("/login", data={

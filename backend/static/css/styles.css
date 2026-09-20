@@ -3805,9 +3805,30 @@ body.role-admin .app-header {
     gap: 0.35rem;
 }
 
-.pill-healthy { background: rgba(22, 163, 74, 0.18); border: 1px solid #16A34A; color: #34D399; }
-.pill-low { background: rgba(212, 167, 44, 0.18); border: 1px solid #D4A72C; color: #F59E0B; }
-.pill-critical { background: rgba(190, 18, 60, 0.18); border: 1px solid #BE123C; color: #F87171; }
+.pill-healthy,
+.pill-safe { background: rgba(22, 163, 74, 0.18); border: 1px solid #16A34A; color: #34D399; }
+
+.pill-warning,
+.pill-watch { background: rgba(217, 119, 6, 0.18); border: 1px solid #D97706; color: #FBBF24; }
+
+.pill-low { background: rgba(249, 115, 22, 0.18); border: 1px solid #EA580C; color: #FB923C; }
+
+.pill-critical { background: rgba(220, 38, 38, 0.18); border: 1px solid #DC2626; color: #F87171; }
+
+.pill-neutral { background: rgba(148, 163, 184, 0.18); border: 1px solid #64748B; color: #94A3B8; }
+
+/* Light Theme Overrides for Smart Forecast Pills */
+body.light-theme .pill-healthy,
+body.light-theme .pill-safe { background: #dcfce7; border: 1px solid #16a34a; color: #14532d; }
+
+body.light-theme .pill-warning,
+body.light-theme .pill-watch { background: #fef3c7; border: 1px solid #d97706; color: #78350f; }
+
+body.light-theme .pill-low { background: #ffedd5; border: 1px solid #ea580c; color: #7c2d12; }
+
+body.light-theme .pill-critical { background: #fee2e2; border: 1px solid #dc2626; color: #7f1d1d; }
+
+body.light-theme .pill-neutral { background: #f1f5f9; border: 1px solid #64748b; color: #334155; }
 
 .location-text {
     font-size: 0.82rem;
