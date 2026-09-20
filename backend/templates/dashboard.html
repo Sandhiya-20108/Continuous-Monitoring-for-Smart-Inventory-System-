@@ -166,8 +166,15 @@
                             <path d="{{ stock_movement.inbound_curve }}" fill="none" stroke="#D4A72C" stroke-width="3" stroke-linecap="round" />
                             <path d="{{ stock_movement.outbound_curve }}" fill="none" stroke="#14B8A6" stroke-width="2.5" stroke-dasharray="6,4" />
 
-                            <!-- Highlight Data Points -->
+                            <!-- Highlight Data Points & Active Month Guideline -->
                             {% for m in stock_movement.month_data %}
+                                {% if m.is_active %}
+                                    <line x1="{{ m.x }}" y1="25" x2="{{ m.x }}" y2="165" stroke="#64748B" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.75" />
+                                    <circle cx="{{ m.x }}" cy="{{ m.load_y }}" r="7" fill="none" stroke="#A855F7" stroke-width="1.5" opacity="0.7" />
+                                    <circle cx="{{ m.x }}" cy="{{ m.inbound_y }}" r="8" fill="none" stroke="#D4A72C" stroke-width="1.5" opacity="0.8" />
+                                    <circle cx="{{ m.x }}" cy="{{ m.outbound_y }}" r="7.5" fill="none" stroke="#14B8A6" stroke-width="1.5" opacity="0.75" />
+                                {% endif %}
+                                <circle cx="{{ m.x }}" cy="{{ m.load_y }}" r="3.5" fill="#0F172A" stroke="#A855F7" stroke-width="2" />
                                 <circle cx="{{ m.x }}" cy="{{ m.inbound_y }}" r="4.5" fill="#0F172A" stroke="#D4A72C" stroke-width="2.5" />
                                 <circle cx="{{ m.x }}" cy="{{ m.outbound_y }}" r="4" fill="#0F172A" stroke="#14B8A6" stroke-width="2" />
                             {% endfor %}
