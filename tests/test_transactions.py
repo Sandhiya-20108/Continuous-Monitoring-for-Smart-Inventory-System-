@@ -7,6 +7,7 @@ class TestInventoryTransactions(unittest.TestCase):
         self.service = InventoryService()
         # Seed test product
         self.test_product_id = "prod-test-tx-001"
+        self.service.delete_product(self.test_product_id)
         self.service.add_product({
             "_id": self.test_product_id,
             "sku": "SKU-TX-001",
@@ -17,6 +18,10 @@ class TestInventoryTransactions(unittest.TestCase):
             "unit_price": 100.0,
             "average_daily_usage": 5.0
         })
+
+    def tearDown(self):
+        if hasattr(self, "service") and hasattr(self, "test_product_id"):
+            self.service.delete_product(self.test_product_id)
 
     def test_stock_in_increases_stock_and_records_transaction(self):
         res = self.service.update_stock_quantity(
